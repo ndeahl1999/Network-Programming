@@ -1,5 +1,5 @@
 CC=gcc
 
 
-make: HW1.c
-	g++ HW1.c -I../../unpv13e/lib ../../unpv13e/libunp.a
+make: hw1.c
+	g++ hw1.c -I../../unpv13e/lib ../../unpv13e/libunp.a 
