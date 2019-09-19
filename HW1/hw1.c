@@ -4,13 +4,19 @@
     Net Prog HW1
 */
 
-#include "unp.h"
-
+//#include "unp.h"
+//
+extern "C" {
+//#include "unp.h"
+#include "../../unpv13e/lib/unp.h"
+}
+//#include "../../unpv13e/lib/unp.h"
 int main(int argc, char ** argv)
 {
 
     if(argc < 2){
-        perror("ERROR: Invalid arguments");
+        
+        perror("ERROR: ");
         return EXIT_FAILURE;
     }
 
@@ -22,20 +28,22 @@ int main(int argc, char ** argv)
     socklen_t clilen;
     struct sockaddr_in client, server;
 
+    struct sockaddr_in clientaddr, servaddr;
+
     listenfd = Socket(AF_INET, SOCK_STREAM, 0);
 
     bzero(&servaddr, sizeof(servaddr));
-	servaddr.sin_family      = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-	servaddr.sin_port        = htons(SERV_PORT);
+	  servaddr.sin_family      = AF_INET;
+	  servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	  servaddr.sin_port        = htons(SERV_PORT);
 
     Bind(listenfd, (SA *) &servaddr, sizeof(servaddr));
 
-	Listen(listenfd, LISTENQ);
+	  Listen(listenfd, LISTENQ);
 
     for( ; ; ){
         clilen = sizeof(client);
-        if ( (connfd = accept(listenfd, (SA *) &cliaddr, &clilen)) < 0) {
+        if ( (connfd = accept(listenfd, (SA *) &clientaddr, &clilen)) < 0) {
 			if (errno == EINTR)
 				continue;		/* back to for() */
 			else
