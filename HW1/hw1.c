@@ -118,21 +118,26 @@ int main(int argc, char ** argv)
       else if(op_code == 2){
         printf("this is the put request\n");
 
+        // TODO
       }
       // DATA packet
       else if(op_code == 3){
         printf("this is a data packet\n");
 
+        // TODO
         // currently infinitely loops
 
       }
       // ACK Packet
       else if(op_code == 4){
         printf("this is an ACK packet\n");
+        // TODO
 
       }
       else{
         printf("got error\n");
+        // TODO
+
       }
 
       
