@@ -1,3 +1,3 @@
 
 make: hw1.c
-	g++ hw1.c -I../../unpv13e/lib ../../unpv13e/libunp.a -o tftp.out
+	g++ *.c -I../../unpv13e/lib ../../unpv13e/libunp.a -o tftp.out

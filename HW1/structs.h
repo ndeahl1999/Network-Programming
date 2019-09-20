@@ -6,10 +6,9 @@
      ------------------------------------------------
 */
 typedef struct{
-    char * opcode;
-    char * filename;
-    char * mode; 
-    
+    uint16_t op_code;
+    char filename[1024];
+    // no need for mode, only binary
 }request_packet;
 
 /*  DATA Packet has format:
@@ -20,9 +19,9 @@ typedef struct{
      ----------------------------------
 */
 typedef struct{
-    char * opcode;
-    char * block;
-    char * data; 
+    uint16_t op_code;
+    uint16_t block;
+    char data[1024]; 
     
 }data_packet;
 
@@ -34,8 +33,8 @@ typedef struct{
      ---------------------
 */
 typedef struct{
-    char * opcode;
-    char * block;
+    uint16_t op_code;
+    uint16_t block;
 }ack_packet;
 
 /*  ERROR Packet has format:
@@ -46,9 +45,9 @@ typedef struct{
      -----------------------------------------
 */
 typedef struct{
-    char * opcode;
-    char * block;
-    char * data; 
+    uint16_t opcode;
+    char error[1024];
+    uint16_t code; 
     
 }error_packet;
 

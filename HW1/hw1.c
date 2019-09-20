@@ -12,7 +12,7 @@ extern "C" {
 }
 //#include "../../unpv13e/lib/unp.h"
 
-
+#include "structs.h"
 
 
 
@@ -23,6 +23,11 @@ int max_port;
 // use to generate new unique port to recvfrom
 int current_port;
 
+void RRQ();
+
+void WRQ();
+
+void send_ack();
 
 
 int main(int argc, char ** argv)
@@ -154,11 +159,36 @@ int main(int argc, char ** argv)
     timeout_interval.tv_usec = 0;
     setsockopt(listenfd, SOL_SOCKET, SO_RCVTIMEO, &timeout_interval, sizeof(timeout_interval));
 
-    
-
-
-
 
     return 0;
 
 }
+
+
+void RRQ(){
+
+
+}
+
+
+void WRQ(){
+
+
+}
+
+
+
+void send_ack(int listenfd, uint16_t block, struct sockaddr_in * sock, socklen_t sock_len){
+
+  
+  ack_packet packet;
+
+  packet.op_code= htons(4);
+
+
+
+
+}
+
+
+
