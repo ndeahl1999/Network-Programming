@@ -12,63 +12,17 @@ extern "C" {
 }
 //#include "../../unpv13e/lib/unp.h"
 
-/*  Request Packet has format:
-    
-      2 bytes     string    1 byte   string   1 byte
-     ------------------------------------------------   
-    | Opcode |  Filename  |   0  |    Mode    |   0  |
-     ------------------------------------------------
-*/
-typedef struct{
-    char * opcode;
-    char * filename;
-    char * mode; 
-    
-}request_packet;
 
-/*  DATA Packet has format:
-    
-     2 bytes     2 bytes      n bytes
-     ----------------------------------
-    | Opcode |   Block #  |   Data     |
-     ----------------------------------
-*/
-typedef struct{
-    char * opcode;
-    char * block;
-    char * data; 
-    
-}data_packet;
 
-/*  ACK Packet has format:
-    
-      2 bytes     2 bytes
-     ---------------------
-    | Opcode |   Block #  |
-     ---------------------
-*/
-typedef struct{
-    char * opcode;
-    char * block;
-}ack_packet;
 
-/*  ERROR Packet has format:
-    
-      2 bytes     2 bytes      string    1 byte
-     -----------------------------------------
-    | Opcode |  ErrorCode |   ErrMsg   |   0  |
-     -----------------------------------------
-*/
-typedef struct{
-    char * opcode;
-    char * block;
-    char * data; 
-    
-}error_packet;
 
-int port_start;
-int port_end;
+
+// use later to make sure there doesn't exceed the maximum # of connections
+int max_port;
+
+// use to generate new unique port to recvfrom
 int current_port;
+
 
 
 int main(int argc, char ** argv)
@@ -79,8 +33,10 @@ int main(int argc, char ** argv)
         return EXIT_FAILURE;
     }
 
-    port_start = atoi(argv[1]);
-    port_end = atoi(argv[2]);
+    
+    int port_start = atoi(argv[1]);
+    max_port = atoi(argv[2]);
+    
     current_port = port_start;
 
     int listenfd, connfd;
@@ -129,13 +85,23 @@ int main(int argc, char ** argv)
 
 
       // got message successfully
+      // get the type of message
       unsigned short int *op_code_network = (unsigned short *) buffer;
-      unsigned short int op_code = ntohs(*opcode_ptr);
-      printf("the opcode message is : %d\n", opcode);
+      unsigned short int op_code = ntohs(*op_code_network);
+      printf("the opcode message is : %d\n", op_code);
+
+      //TODO:
+      // handle each of these cases in a separate method instead of just in
+      // the main
+
 
       // GET request (serv -> client)
       if(op_code == 1){
         printf("this is the get request\n");
+        if(fork() == 0){
+          close(listenfd);
+          break;
+        }
 
       }
       // PUT request (client -> serv)
@@ -157,12 +123,41 @@ int main(int argc, char ** argv)
         printf("got error\n");
       }
 
-
-
-      
-
       
     }
+
+    current_port++;
+
+    // creating the write listener
+    //TODO:
+    //MOVE THIS INTO A SEPARATE FUNCTION SO IT'S NOT SO MESSY
+    //HANDLE READ AND WRITE IN SEPARATE FUNCTION
+    struct sockaddr_in sock_info;
+    int sockaddr_len = sizeof(sock_info);
+    struct timeval timeout_interval;
+
+
+    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+    servaddr.sin_port = htons(current_port);
+    servaddr.sin_family = AF_INET;
+
+    if((listenfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
+      perror(" socket failed ");
+      exit(0);
+    }
+
+    if(bind(listenfd, (struct sockaddr *)&sock_info, sockaddr_len) < 0){
+      perror("bind faield");
+      exit(0);
+    }
+    timeout_interval.tv_sec = 1;
+    timeout_interval.tv_usec = 0;
+    setsockopt(listenfd, SOL_SOCKET, SO_RCVTIMEO, &timeout_interval, sizeof(timeout_interval));
+
+    
+
+
+
 
     return 0;
 
