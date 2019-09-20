@@ -27,7 +27,7 @@ void RRQ();
 
 void WRQ();
 
-void send_ack();
+int send_ack(int listenfd, uint16_t block, struct sockaddr_in * sock, socklen_t sock_len);
 
 
 int main(int argc, char ** argv)
@@ -95,6 +95,11 @@ int main(int argc, char ** argv)
       unsigned short int op_code = ntohs(*op_code_network);
       printf("the opcode message is : %d\n", op_code);
 
+
+
+      // NOT SURE IF THIS IS THE RIGHT SOCKET TO USE
+      send_ack(listenfd, 0, &client_socket, slen);
+
       //TODO:
       // handle each of these cases in a separate method instead of just in
       // the main
@@ -117,6 +122,8 @@ int main(int argc, char ** argv)
       // DATA packet
       else if(op_code == 3){
         printf("this is a data packet\n");
+
+        // currently infinitely loops
 
       }
       // ACK Packet
@@ -178,15 +185,21 @@ void WRQ(){
 
 
 
-void send_ack(int listenfd, uint16_t block, struct sockaddr_in * sock, socklen_t sock_len){
+// dedicated function to sending acknowledgement 
+int send_ack(int listenfd, uint16_t block, struct sockaddr_in * sock, socklen_t sock_len){
 
-  
   ack_packet packet;
 
   packet.op_code= htons(4);
+  packet.block = htons(block);
 
+  ssize_t bytes_sent;
+  if((bytes_sent = sendto(listenfd, &packet, sizeof(packet), 0, (struct sockaddr *) sock, sock_len)) < 0 ){
+    perror("sendto failed");
+    exit(0);
+  }
 
-
+  return bytes_sent;
 
 }
 
