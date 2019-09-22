@@ -23,9 +23,11 @@ int max_port;
 // use to generate new unique port to recvfrom
 int current_port;
 
-void RRQ();
 
-void WRQ();
+void handle_write(struct sockaddr_in* sock,char* buffer, int buffer_length);
+void handle_read(struct sockaddr_in* sock,char* buffer, int buffer_length);
+
+
 
 int send_ack(int listenfd, uint16_t block, struct sockaddr_in * sock, socklen_t sock_len);
 
@@ -47,7 +49,7 @@ int main(int argc, char ** argv)
     int listenfd, connfd;
     pid_t childpid;
     socklen_t clilen;
-    struct sockaddr_in clientaddr, servaddr;
+    struct sockaddr_in servaddr;
 
     // initialize the socket
     if((listenfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ){
@@ -73,6 +75,8 @@ int main(int argc, char ** argv)
     // start to receive
     int msg_len;
     char buffer[1024];
+    unsigned short int opcode;
+    unsigned short int * opcode_ptr;
 
     for( ; ; ){
 
@@ -91,99 +95,134 @@ int main(int argc, char ** argv)
 
       // got message successfully
       // get the type of message
-      unsigned short int *op_code_network = (unsigned short *) buffer;
-      unsigned short int op_code = ntohs(*op_code_network);
-      printf("the opcode message is : %d\n", op_code);
+      opcode_ptr = (unsigned short int *) buffer;
+      opcode = ntohs(*opcode_ptr);
+      printf("the opcode message is : %d\n", opcode);
 
+      if(opcode != 1 && opcode != 2){
+      
+        *opcode_ptr = htons(5);
+        *(opcode_ptr+1) = htons(4);
+        msg_len = sendto(listenfd, &buffer, 5, 0, (struct sockaddr *)&servaddr, sizeof(servaddr));
 
-
-      // NOT SURE IF THIS IS THE RIGHT SOCKET TO USE
-      send_ack(listenfd, 0, &client_socket, slen);
-
-      //TODO:
-      // handle each of these cases in a separate method instead of just in
-      // the main
-
-
-      // GET request (serv -> client)
-      if(op_code == 1){
-        printf("this is the get request\n");
-        if(fork() == 0){
-          close(listenfd);
-          break;
+        if(msg_len < 0){
+          perror("failed to send");
+          return 1;
         }
-
-      }
-      // PUT request (client -> serv)
-      else if(op_code == 2){
-        printf("this is the put request\n");
-
-        // TODO
-      }
-      // DATA packet
-      else if(op_code == 3){
-        printf("this is a data packet\n");
-
-        // TODO
-        // currently infinitely loops
-
-      }
-      // ACK Packet
-      else if(op_code == 4){
-        printf("this is an ACK packet\n");
-        // TODO
-
+      
       }
       else{
-        printf("got error\n");
-        // TODO
+        if(fork() == 0){
 
+          close(listenfd);
+
+          if(opcode == 1)
+            handle_read(&client_socket, buffer, 1024);
+          if(opcode == 2)
+            handle_write(&client_socket, buffer, 1024);
+          break;
+        
+        }
       }
-
-      
     }
-
-    current_port++;
-
-    // creating the write listener
-    //TODO:
-    //MOVE THIS INTO A SEPARATE FUNCTION SO IT'S NOT SO MESSY
-    //HANDLE READ AND WRITE IN SEPARATE FUNCTION
-    struct sockaddr_in sock_info;
-    int sockaddr_len = sizeof(sock_info);
-    struct timeval timeout_interval;
-
-
-    servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(current_port);
-    servaddr.sin_family = AF_INET;
-
-    if((listenfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
-      perror(" socket failed ");
-      exit(0);
-    }
-
-    if(bind(listenfd, (struct sockaddr *)&sock_info, sockaddr_len) < 0){
-      perror("bind faield");
-      exit(0);
-    }
-    timeout_interval.tv_sec = 1;
-    timeout_interval.tv_usec = 0;
-    setsockopt(listenfd, SOL_SOCKET, SO_RCVTIMEO, &timeout_interval, sizeof(timeout_interval));
-
-
     return 0;
 
 }
 
 
-void RRQ(){
+
+void handle_write(struct sockaddr_in* sock, char* buffer, int buffer_length){
+
+
 
 
 }
 
 
-void WRQ(){
+void handle_read(struct sockaddr_in* sock, char* buffer, int buffer_length){
+
+  char *file_name = strchr(buffer, '\0')+1;
+  printf("file name is [%s]\n", file_name);
+
+  char *mode= strchr(file_name, '\0')+1;
+  printf(" mode is %s\n", mode);
+
+  if(strcmp(mode, "octet") !=0){
+  
+    perror("not octet");
+    return;
+  }
+
+
+
+  struct timeval tv;
+  tv.tv_sec = 1 ;
+  tv.tv_usec = 0;
+  //TFTP uses UDP so let's check for protocol
+  
+  //create socket 
+  
+  int listenfd;
+  if((listenfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1){
+  
+    perror("socket failed");
+    return;
+  }
+
+  if(setsockopt(listenfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) <0){
+  
+  
+    perror("failed to set sock");
+    return;
+  }
+
+  FILE *fd;
+  fd = fopen(file_name, "r");
+  if(fd == NULL){
+  
+    perror("file couldn't");
+  
+    return;
+
+  }
+
+
+  int block = 0;
+  int current_len = 0;
+
+  bool done = false;
+
+  while(!done){
+  
+    char data[512];
+    current_len = fread(data, 1,sizeof(data), fd);
+    data[current_len] = '\0';
+    block++;
+
+    if(current_len < 512)
+      done = true;
+
+    int count = 10;
+    
+    data_packet message;
+    
+    
+    while(count > 0){
+
+      message.op_code = htons(3);
+      message.block = htons(block);
+      memcpy(message.data, data, current_len);
+      printf("data read: %s\n", data);
+
+
+
+      
+    }
+  }
+
+
+
+
 
 
 }
