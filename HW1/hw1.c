@@ -141,9 +141,13 @@ void handle_write(struct sockaddr_in* sock, char* buffer, int buffer_length){
 
 void handle_read(struct sockaddr_in* sock, char* buffer, int buffer_length){
 
-  char *file_name = strchr(buffer, '\0')+1;
-  printf("file name is [%s]\n", file_name);
+  
+  char file_name[80];
+  strcpy(file_name, buffer+2);
 
+ // char *file_name = strchr(buffer, '\0')+1;
+  printf("file name is [%s]\n", file_name);
+/*
   char *mode= strchr(file_name, '\0')+1;
   printf(" mode is %s\n", mode);
 
@@ -153,6 +157,7 @@ void handle_read(struct sockaddr_in* sock, char* buffer, int buffer_length){
     return;
   }
 
+  */
 
 
   struct timeval tv;
