@@ -145,58 +145,47 @@ void handle_read(struct sockaddr_in* sock, char* buffer, int buffer_length){
   char file_name[80];
   strcpy(file_name, buffer+2);
 
- // char *file_name = strchr(buffer, '\0')+1;
   printf("file name is [%s]\n", file_name);
-/*
-  char *mode= strchr(file_name, '\0')+1;
-  printf(" mode is %s\n", mode);
-
-  if(strcmp(mode, "octet") !=0){
-  
-    perror("not octet");
-    return;
-  }
-
-  */
 
 
+
+  // set timeout
   struct timeval tv;
   tv.tv_sec = 1 ;
   tv.tv_usec = 0;
-  //TFTP uses UDP so let's check for protocol
   
   //create socket 
-  
   int listenfd;
   if((listenfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1){
-  
     perror("socket failed");
     return;
   }
 
+
+  // add some options
   if(setsockopt(listenfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) <0){
-  
-  
     perror("failed to set sock");
     return;
   }
 
+
+  // open file for reading
   FILE *fd;
   fd = fopen(file_name, "r");
   if(fd == NULL){
-  
     perror("file couldn't");
-  
     return;
-
   }
 
 
+
+  // main loop to read file and pass it
   int block = 0;
   int current_len = 0;
 
   bool done = false;
 
+  int msg_len;
   while(!done){
   
     char data[512];
@@ -219,12 +208,63 @@ void handle_read(struct sockaddr_in* sock, char* buffer, int buffer_length){
       memcpy(message.data, data, current_len);
       printf("data read: %s\n", data);
 
+      
 
+      // fix this send
+      // TODO
+      if((msg_len = sendto(listenfd, &message, 4 + current_len, 0, (struct sockaddr *) sock, sizeof(sock))) == 0){
+        perror("failed to send");
+        return;
+      }
+      
+      if(msg_len < 0){
+      
+        perror("no send");
+        return;
+      }
+
+
+      int recv_len;
+      socklen_t holder = sizeof(*sock);
+      if((recv_len = recvfrom(listenfd, buffer, sizeof(*buffer), 0, (struct sockaddr *) sock, &holder)) <0 && errno != EAGAIN){
+      
+        perror("receive error");
+      }
+
+      if( recv_len >= 4){
+      
+        count = -1;
+      }
+
+      if(count != 1){
+      
+        if(recv_len < 4 && recv_len >=0){
+          const char *req_s = "requset was not valid";
+          msg_len = sendto(listenfd, &req_s, strlen(req_s)+4, 0, (struct sockaddr*) sock, holder);
+          return;
+        }
+        if(errno == EAGAIN){
+        
+          printf("errno\n");
+          return;
+        }
+      }
+
+
+      count--;
 
       
     }
+    if(count == 0){
+      printf("timed out\n");
+      return;
+    }
+
+
   }
 
+  fclose(fd);
+  close(listenfd);
 
 
 
