@@ -1,0 +1,48 @@
+How are the annotations drawn?
+  - How are all the points along the route connected?
+    - How to do it in Mapkit?
+
+
+
+
+Code walkthrough and annotation before
+
+
+
+
+Examples of changes to not be so static:
+
+
+    var eastCoordinates: [CLLocationCoordinate2D]!
+    var westCoordinates: [CLLocationCoordinate2D]!
+    var lateNightCoordinates: [CLLocationCoordinate2D]!
+
+    - Adjust to use a simple array to store an infinite # of routes
+      as retrieved from the datafeed.
+      - Use relationa
+l array maybe
+
+      var routeLayer is already dynamic, follow how that's set to
+        do the coordinate storing
+
+
+      @IBAction func toggleRoutes(_ sender: UISegmentedControl) {
+        switch sender.selectedSegmentIndex {
+        case 0:
+            showRoute(name: "east")
+            showRoute(name: "west")
+        case 1:
+            showRoute(name: "east")
+            hideRoute(name: "west")
+        case 2:
+            showRoute(name: "west")
+            hideRoute(name: "east")
+   
+     default:
+            break
+        }
+    }
+
+    - Adjust to add an infinite # of buttons for as many routes are
+      turned on at the moment
+
