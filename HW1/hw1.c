@@ -49,11 +49,11 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     return;
   }
 
-  *opcode_ptr = htons(4);
-  *(opcode_ptr+1) = htons(123);
-  *(buffer+4) = 0;
-  printf("sending ack\n");
-  n = sendto(listenfd, buffer, 5, 0, (struct sockaddr*) servaddr, sizeof(*servaddr));
+  // *opcode_ptr = htons(4);
+  // *(opcode_ptr+1) = htons(123);
+  // *(buffer+4) = 0;
+  // printf("sending ack\n");
+  // n = sendto(listenfd, buffer, 5, 0, (struct sockaddr*) servaddr, sizeof(*servaddr));
 
   while(1){
     block++;
@@ -61,11 +61,14 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     // append to after the op code
     *opcode_ptr = htons(3);
     *(opcode_ptr+1) = htons(block);
-    for(n = 4; n < 516; n++){
-        printf("just got 1 char\n");
-        if(feof(f)) break;
-        buffer[n] = fgetc(f);
-    }
+    // for(n = 4; n < 516; n++){
+    //     printf("just got 1 char\n");
+    //     if(feof(f)) break;
+    //     buffer[n] = fgetc(f);
+    // }
+
+    n = fread(data, 1, sizeof(data), f);
+    data[n] = '\0';
 
 
 
