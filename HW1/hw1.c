@@ -127,6 +127,13 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
         break;
   }
 
+
+  *opcode_ptr = htons(4);
+  *(opcode_ptr + 1) = htons(block);
+  *(buffer+4) = 0;
+  n = sendto(listenfd, buffer, 5, 0, (struct sockaddr*) servaddr, sizeof(*servaddr));
+  
+
   fclose(f);
 }
 
@@ -356,7 +363,7 @@ int main(int argc, char** argv) {
     }
 
     if(bind(listenfd, (struct sockaddr *)&sock_info, sockaddr_len) < 0) {
-        perror("%d\n" + sock_info.sin_port);
+        printf("errored at %d\n", (int)ntohs(sock_info.sin_port));
         perror("bind error");
         exit(-1);
     }
