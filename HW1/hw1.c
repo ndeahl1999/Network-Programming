@@ -66,9 +66,17 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     //     if(feof(f)) break;
     //     buffer[n] = fgetc(f);
     // }
+    while(!feof(f)){
+      printf("%c\n", fgetc(f));
+    }
+    return;
 
-    n = fread(data, 1, sizeof(data), f);
-    data[n] = '\0';
+    // n = fread(data, 1, sizeof(data), f);
+    // data[n] = '\0';
+
+    // for(n=4;n<517;i++){
+    //   buffer[n] = data[n]
+    // }
 
 
 
