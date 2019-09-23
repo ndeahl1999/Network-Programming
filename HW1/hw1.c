@@ -49,6 +49,12 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     return;
   }
 
+  *opcode_ptr = htons(4);
+  *(opcode_ptr+1) = htons(123);
+  *(buffer+4) = 0;
+  printf("sending ack\n");
+  n = sendto(listenfd, buffer, 5, 0, (struct sockaddr*) servaddr, sizeof(*servaddr));
+
   while(1){
     block++;
 
@@ -59,6 +65,8 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
         if(feof(f)) break;
         buffer[n] = fgetc(f);
     }
+
+
 
     // create the full packet
     for(int i = 0; i < 517; i++)
