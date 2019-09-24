@@ -224,6 +224,7 @@ int sendData (char* filePath, char* modeStr, struct sockaddr_in clientAddr)
             buffIndex ++;
             if (MODE_NETASCII == mode)
             {
+                printf("got here\n");
                 if ('\n' == character)
                 {
                     nextChar = character;

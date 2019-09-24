@@ -13,6 +13,10 @@ void handler(){
 
     while((pid = waitpid(-1, &stat, WNOHANG)) > 0){
         printf("child %d terminatied\n", pid);
+
+        if(WIFEXITED(stat)){
+          printf("Child exited with code: %d\n", WEXITSTATUS(stat));
+        }
     }
 }
 
@@ -25,7 +29,7 @@ void sig_alarm(){
 
 void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
   int tid = ntohs(servaddr->sin_port);
-  // printf("that port is %d\n", tid);
+  printf("that port is %d\n", tid);
   char filename[80];
   int block = 0;
   char data[517];
@@ -46,6 +50,8 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     *(buffer+4) = 0;
     //send an error and terminate
     n = sendto(listenfd, buffer, 5, 0, (struct sockaddr*) servaddr, sizeof(*servaddr));
+    printf("couldn't find this\n");
+   
     return;
   }
 
@@ -75,6 +81,9 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
          printf("the buffer contains %c\n", *(buffer+n));
     //     buffer[n] = fgetc(f);
      }
+
+
+    printf("just read the characters with length %d\n", n);
     //  buffer[n] = '\0';
     //  printf("the count is %d\n", n);
      /*
@@ -95,7 +104,7 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
 
 
     // create the full packet
-    for(int i = 0; i < 517; i++)
+    for(int i = 0; i < n; i++)
       data[i] = buffer[i];
     current_len = n;
 
@@ -103,15 +112,22 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     //send
     n = sendto(listenfd, buffer, n, 0,(struct sockaddr*) servaddr, sizeof(*servaddr));
 
+    printf("this is --------- %d\n", servaddr->sin_port);
+
     int count = 0;
 
 
     socklen_t sockaddr_len;
     // get ack
     while(1){
+      printf("now waiting on recv\n");
       n = recvfrom(listenfd, buffer, 517, 0, (struct sockaddr *)&servaddr, &sockaddr_len);
+      // printf("the port shoudl be set here %d\n", servaddr->sin_port);
+      printf("just finished with recv %d\n", n);
       if(n < 0) {
         if(errno == EINTR) continue;
+
+        printf("got past the errno record\n");
 
         // wait a second
         if(errno == EWOULDBLOCK){
@@ -126,19 +142,32 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
           n = sendto(listenfd, data, current_len,0,(struct sockaddr*) servaddr, sizeof(*servaddr));
         }
         perror("recvfrom");
+        printf("this ffailed but not in stderr\n");
         exit(-1);
       }else{
+        printf("SOLUTION HERE\n");
         break;
       }
     }
+
+
+  
+    printf("now after getting ack\n");
+    printf("now after getting ackasdf\n");
     //check the tid
-    if(ntohs(servaddr->sin_port) != tid){
-      //different client
-      *opcode_ptr = htons(5);
-      *(opcode_ptr+1) = htons(5);
-      *(buffer+4) = 0;
-      n = sendto(listenfd, buffer, 5, 0, (struct sockaddr*) servaddr, sizeof(*servaddr));
+    printf("%d\n", ntohs(servaddr->sin_port)); //THIS CRASHES IT on the first run through
+    printf("got here at leastasd\n");
+     if(ntohs(servaddr->sin_port) != tid){
+      //  printf("atleast here\n");
+       //different client
+       *opcode_ptr = htons(5);
+       *(opcode_ptr+1) = htons(5);
+       *(buffer+4) = 0;
+       printf("wrong port\n");
+       n = sendto(listenfd, buffer, 5, 0, (struct sockaddr *)servaddr, sizeof(*servaddr));
     }
+
+    printf("just got past checking xtid\n");
 
     //reset the timout counter
     count = 0;
@@ -156,9 +185,12 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
       }
     }
 
+    printf("just got done resendnig packet\n");
+
     // done sending
+    printf("CURR_LEN IS %d\n", current_len);
     if(current_len < 517)
-        break;
+      break;
   }
 
 
@@ -289,7 +321,7 @@ void put_reqest(int listenfd, struct sockaddr_in * servaddr, char * buffer){
 int main(int argc, char** argv) {
     int n;
     char buffer[517];
-    socklen_t sockaddr_len;
+    socklen_t sockaddr_len, client_len;
     struct sigaction act;
     
 
@@ -320,16 +352,17 @@ int main(int argc, char** argv) {
 
     int listenfd, connfd;
     pid_t childpid;
-    struct sockaddr_in servaddr;
+    struct sockaddr_in servaddr, clientaddr;
 
     sockaddr_len = sizeof(servaddr);
-
+    client_len = sizeof(clientaddr);
     // initialize the socket
     if((listenfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ){
       perror("socket failed");
       exit(0);
     }
     memset(&servaddr, 0, sockaddr_len);
+    memset(&clientaddr, 0, client_len);
 
     servaddr.sin_family      = AF_INET;
 	  servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -338,7 +371,7 @@ int main(int argc, char** argv) {
     printf("%d\n", port_start);
 
     // bind to port
-    if(bind(listenfd, (SA *) &servaddr, sockaddr_len) < 0){
+    if(bind(listenfd, (struct sockaddr *) &servaddr, sockaddr_len) < 0){
       perror("bind failed");
       exit(0);
     }
@@ -350,8 +383,10 @@ int main(int argc, char** argv) {
 
 
     while(1) {
-      n = recvfrom(listenfd, buffer, 517, 0, (struct sockaddr *)&servaddr, &sockaddr_len);
-      if(n < 0) {
+      n = recvfrom(listenfd, buffer, 517, 0, (struct sockaddr *)&clientaddr, &client_len);
+      // printf("the port we got stuff from is %d from pid %d\n", ntohs(servaddr.sin_port), getpid());
+      if (n < 0)
+      {
 
         // to fix interrupting the system call
         if(errno == EINTR) 
