@@ -64,12 +64,19 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     *(opcode_ptr+1) = htons(block);
      for(n = 4; n < 517; n++){
          //printf("just got 1 char\n");
-         if(feof(f)) break;
-         fscanf(f, "%c", &ltr);
+        //  if(feof(f)) {
+        //     printf("break\n"); 
+        //     break;
+        //  }
+         if(fscanf(f, "%c", &ltr) == EOF){
+          break;
+         }
          buffer[n] = ltr;
+         printf("the buffer contains %c\n", *(buffer+n));
     //     buffer[n] = fgetc(f);
      }
-     buffer[n] = '\0';
+    //  buffer[n] = '\0';
+    //  printf("the count is %d\n", n);
      /*
     while(!feof(f)){
       char ltr;
@@ -150,7 +157,7 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     }
 
     // done sending
-    if(current_len < 516)
+    if(current_len < 517)
         break;
   }
 
