@@ -67,7 +67,9 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     //     buffer[n] = fgetc(f);
     // }
     while(!feof(f)){
-      printf("%c\n", fgetc(f));
+      char ltr;
+      fscanf(f, "%c", &ltr);
+      printf("%c\n", ltr);
     }
     return;
 
