@@ -62,13 +62,14 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
     // append to after the op code
     *opcode_ptr = htons(3);
     *(opcode_ptr+1) = htons(block);
-     for(n = 4; n < 516; n++){
+     for(n = 4; n < 517; n++){
          //printf("just got 1 char\n");
          if(feof(f)) break;
          fscanf(f, "%c", &ltr);
          buffer[n] = ltr;
     //     buffer[n] = fgetc(f);
      }
+     buffer[n] = '\0';
      /*
     while(!feof(f)){
       char ltr;
