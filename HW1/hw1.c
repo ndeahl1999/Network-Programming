@@ -55,23 +55,27 @@ void get_request(int listenfd, struct sockaddr_in * servaddr, char * buffer){
   // printf("sending ack\n");
   // n = sendto(listenfd, buffer, 5, 0, (struct sockaddr*) servaddr, sizeof(*servaddr));
 
+  char ltr;
   while(1){
     block++;
 
     // append to after the op code
     *opcode_ptr = htons(3);
     *(opcode_ptr+1) = htons(block);
-    // for(n = 4; n < 516; n++){
-    //     printf("just got 1 char\n");
-    //     if(feof(f)) break;
+     for(n = 4; n < 516; n++){
+         //printf("just got 1 char\n");
+         if(feof(f)) break;
+         fscanf(f, "%c", &ltr);
+         buffer[n] = ltr;
     //     buffer[n] = fgetc(f);
-    // }
+     }
+     /*
     while(!feof(f)){
       char ltr;
       fscanf(f, "%c", &ltr);
       printf("%c\n", ltr);
     }
-    return;
+    */
 
     // n = fread(data, 1, sizeof(data), f);
     // data[n] = '\0';
