@@ -193,7 +193,76 @@ int put_request(char * fileName, struct sockaddr_in clientaddr){
   memset(&data_pkt, 0, sizeof(struct DATAPKT));
   memset(&ack_pkt,0, sizeof(struct ACKPKT));
   memset(&child_addr, 0, sizeof(struct sockaddr_in));
-    
+
+  FILE* fp = fopen(fileName, "r");
+
+  if (fp == NULL)
+  {
+    send_error(errno, clientaddr);
+    return 0;
+  }
+
+
+  int child_fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+  if(child_fd < 0){
+    perror("Socket");
+    return 0;
+  }
+
+  child_addr.sin_family = AF_INET;
+
+  child_addr.sin_addr.s_addr = (INADDR_ANY);
+
+  child_addr.sin_port = htons(get_new_port());
+
+  while(bind(child_fd, (struct sockaddr*) &child_addr, sizeof (child_addr)) < 0)
+  {
+    child_addr.sin_port = htons(get_new_port());
+  }
+  
+  fd_set read_fds;
+  FD_ZERO (&read_fds);
+  FD_SET (child_fd, &read_fds);
+
+  struct timeval tv;
+  tv.tv_sec = 10;
+  tv.tv_usec = 0;
+
+  uint16_t block_cnt = 1; 
+  uint16_t count = 0;   
+  size_t buffer_size = 0;
+  bool error_ocr = false; 
+  uint16_t buff_len = 0;
+  char buffer [512] = {0};
+  uint16_t buff_index = 0;
+  int total_data = 0;
+  char next_char = -1;    
+  char character = '\0'; 
+  int retry_count = 0;  
+  int status = 0;
+  socklen_t addrlen = sizeof (struct sockaddr_in); 
+  while(1){
+    ack_pkt.opcode = htons(4);
+    ack_pkt.blkNumber=block_cnt;
+    sendto(child_fd, (void*)&ack_pkt, sizeof(ack_pkt), 0, (struct sockaddr *) &clientaddr, addrlen);
+    if((buff_len != 512) || (error_ocr == true)){
+      break;
+    }
+    if((status = select (child_fd + 1, &read_fds, NULL, NULL, &tv)) <= 0){
+      if(status == 0){
+        fprintf(stderr, "Timedout while waiting for packet from the host \n");
+        break;
+      }else if ( status>0){
+        perror("select");
+        break;
+      }
+    }
+
+  }
+
+
+
 }
 
 void process_request(void* buffer, struct sockaddr_in clientaddr){
