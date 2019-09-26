@@ -62,6 +62,44 @@ void handler(){
 
 void send_error(int errNumber, struct sockaddr_in clientaddr){
 
+    int childFd = 0;
+    struct sockaddr_in childAddr;
+    socklen_t addrlen = sizeof (struct sockaddr_in);
+    struct ERRPKT errPkt ;                 // to form the error packet
+    int errType = 1;          // stores the type of the error occured
+    int bufferSize = 0;
+
+    memset (&childAddr, 0, sizeof (struct sockaddr_in));
+    memset (&errPkt, 0, sizeof (struct ERRPKT));
+
+    // Start to send the data
+    if ((childFd = socket (AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
+        // printErrMsg ("socket");
+        return;
+    }
+
+    // Child server information
+    childAddr.sin_family = AF_INET;
+    childAddr.sin_addr.s_addr = htonl (INADDR_ANY); // Taking local IP
+    childAddr.sin_port = htons(0);                  // Bind will assign a ephemeral port
+
+    if (bind(childFd, (struct sockaddr*) &childAddr, sizeof (childAddr)) < 0)
+    {
+        // printErrMsg ("bind");
+
+        return;
+    }
+
+    errPkt.opcode = htons(5);
+    if (errNumber == EACCES)
+    {
+        // errType = ACCESS_VIOLATION;
+    }
+    errPkt.errCode = htons(errType);
+    snprintf (errPkt.errMsg, sizeof (errPkt.errMsg), "%c", errPkt.errMsg[errType]);
+    bufferSize = sizeof (errPkt.opcode) + sizeof (errPkt.errCode) + strlen (errPkt.errMsg) + 1;
+    sendto (childFd, (void *)(&errPkt), bufferSize, 0, (struct sockaddr *) &clientaddr, addrlen);
 }
 
 int get_request(char * fileName, struct sockaddr_in clientaddr){
@@ -193,6 +231,8 @@ int put_request(char * fileName, struct sockaddr_in clientaddr){
   memset(&data_pkt, 0, sizeof(struct DATAPKT));
   memset(&ack_pkt,0, sizeof(struct ACKPKT));
   memset(&child_addr, 0, sizeof(struct sockaddr_in));
+
+  return 1;
     
 }
 
@@ -204,9 +244,11 @@ void process_request(void* buffer, struct sockaddr_in clientaddr){
   //GET request
   if(req_pkt->opcode == 1){
     get_request(req_pkt->fileName, clientaddr);
-  }else if(req_pkt->opcode = 2){//PUT request
+  //PUT request
+  }else if(req_pkt->opcode == 2){
     put_request(req_pkt->fileName, clientaddr);
-  }else{//Other request
+  //Other request
+  }else{
     fprintf(stderr, "ERROR: Invalid Client request\n");
   }
 
