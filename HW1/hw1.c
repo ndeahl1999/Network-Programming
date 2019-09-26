@@ -1,25 +1,8 @@
 #include "unp.h"
+#include <stdbool.h>
 
 //Structs for easier handling of each type of packet sent
-struct DATAPKT
-{
-    uint16_t opcode;
-    uint16_t blkNumber;
-    char data[MAX_DATA_SIZE];
-};
 
-struct ACKPKT
-{
-    uint16_t opcode;
-    uint16_t blkNumber;
-};
-
-struct ERRPKT
-{
-    uint16_t opcode;
-    uint16_t errCode;
-    char errMsg[MAX_ERR_SIZE];
-}; 
 struct REQPKT
 {
     uint16_t opcode;
@@ -75,8 +58,130 @@ void handler(){
     }
 }
 
-int get_request(char * fileName, struct sockaddr_in clientaddr){
+void send_error(int errNumber, struct sockaddr_in clientaddr){
 
+}
+
+int get_request(char * fileName, struct sockaddr_in clientaddr){
+  struct DATAPKT data_pkt;
+  struct ACKPKT ack_pkt;
+  struct sockaddr_in child_addr;
+  memset(&data_pkt, 0, sizeof(struct DATAPKT));
+  memset(&ack_pkt,0, sizeof(struct ACKPKT));
+  memset(&child_addr, 0, sizeof(struct sockaddr_in));
+  
+  FILE* fp = fopen(fileName, "r");
+
+  if (fp == NULL)
+  {
+    send_error(errno, clientaddr);
+    return 0;
+  }
+
+  int child_fd = socket(AF_INET, SOCK_DGRAM, 0);
+
+  if(child_fd < 0){
+    perror("Socket");
+    return 0;
+  }
+
+  child_addr.sin_family = AF_INET;
+
+  child_addr.sin_addr.s_addr = (INADDR_ANY);
+
+  child_addr.sin_port = htons(get_new_port());
+
+  if (bind(child_fd, (struct sockaddr*) &child_addr, sizeof (child_addr)) < 0)
+  {
+    perror("bind");
+    return 0;
+  }
+  
+  fd_set read_fds;
+  FD_ZERO (&read_fds);
+  FD_SET (child_fd, &read_fds);
+
+  struct timeval tv;
+  tv.tv_sec = 10;
+  tv.tv_usec = 0;
+
+
+  uint16_t block_cnt = 1;                            // Block count will have the block number that needs to be sent next in the pkt
+  uint16_t count = 0;   
+  size_t buffer_size = 0;
+  bool isEOF = false; 
+  uint16_t buff_len = 0;
+  char buffer [512] = {0};
+  uint16_t buff_index = 0;
+  int total_data = 0;
+  char next_char = -1;    
+  char character = '\0'; 
+  int retry_count = 0;  
+  int status = 0;
+  socklen_t addrlen = sizeof (struct sockaddr_in);
+  while(1){
+    for(count = 0; count < 512; count++){
+        if((buff_index == buff_len) && (isEOF == false)){
+          memset(buffer, 0, sizeof(buffer));
+          buff_index = 0;
+          buff_len= fread(buffer, 1, sizeof(buffer), fp );
+          total_data += buff_len;
+          
+          if (buff_len < 512) {
+            isEOF = true;
+          }
+
+          if (ferror (fp))
+          {
+            fprintf(stderr, "ERROR: Read error from getc on local machine\n");
+          } 
+        }
+        if(next_char >= 0){
+          data_pkt.data [count]= next_char;
+          next_char = -1;
+          continue;
+        }
+        if (buff_index >= buff_len)
+        {
+          break;
+        }
+        character = buffer[buff_index];
+        buff_index++;
+        data_pkt.data[count] = character;
+    }
+    data_pkt.opcode = htons(3);
+    data_pkt.blkNumber = htons(block_cnt % 65536);
+    buffer_size = sizeof(data_pkt.opcode) + sizeof(data_pkt.blkNumber)+ (count);
+    do{
+      sendto(child_fd, (void*)&data_pkt, buffer_size, 0, (struct sockaddr*) &clientaddr, addrlen);
+      if((status= select (child_fd + 1, &read_fds, NULL, NULL, &tv) <= 0)){
+        retry_count++;
+        continue;
+      }else{
+        if((status = recvfrom (child_fd, (void *)&ack_pkt, sizeof (ack_pkt), 0, (struct sockaddr*) &clientaddr, &addrlen)) >= 0){
+          if((ntohs(ack_pkt.opcode )== 4) && (ntohs(ack_pkt.blkNumber)== block_cnt)){
+            break;
+          }
+        }
+      }
+      memset (&ack_pkt, 0, sizeof (struct ACKPKT));
+    }while(retry_count < 10);
+    if (retry_count >= 10)
+    {
+      printf ("ERROR: Timed out, breaking after %d tries \n", retry_count);
+        break;
+    }
+    block_cnt++;
+    memset(&data_pkt, 0 , sizeof( struct DATAPKT));
+    retry_count = 0;
+    if ((count < 512) && (buff_index == buff_len)){
+      break;
+    }
+  }
+
+  fclose(fp);
+
+  return 1;
 
 }
 
