@@ -32,6 +32,7 @@ struct ERRPKT
 //global variables for tracking port numbers;
 int current_port;
 int max_port;
+int start_port;
 
 
 //check available port for new connection;
@@ -39,7 +40,8 @@ int get_new_port(){
   if(current_port < max_port){
     return current_port++;
   }else{
-    fprintf(stderr, "ERROR: Out of available ports\n");
+    current_port = start_port + 1;
+    return current_port;
   }
 
 }
@@ -91,10 +93,9 @@ int get_request(char * fileName, struct sockaddr_in clientaddr){
 
   child_addr.sin_port = htons(get_new_port());
 
-  if (bind(child_fd, (struct sockaddr*) &child_addr, sizeof (child_addr)) < 0)
+  while(bind(child_fd, (struct sockaddr*) &child_addr, sizeof (child_addr)) < 0)
   {
-    perror("bind");
-    return 0;
+    child_addr.sin_port = htons(get_new_port());
   }
   
   fd_set read_fds;
@@ -186,7 +187,13 @@ int get_request(char * fileName, struct sockaddr_in clientaddr){
 }
 
 int put_request(char * fileName, struct sockaddr_in clientaddr){
-
+  struct DATAPKT data_pkt;
+  struct ACKPKT ack_pkt;
+  struct sockaddr_in child_addr;
+  memset(&data_pkt, 0, sizeof(struct DATAPKT));
+  memset(&ack_pkt,0, sizeof(struct ACKPKT));
+  memset(&child_addr, 0, sizeof(struct sockaddr_in));
+    
 }
 
 void process_request(void* buffer, struct sockaddr_in clientaddr){
@@ -212,9 +219,9 @@ int main(int argc, char ** argv){
         return EXIT_FAILURE;
   }
 
-  int port_start = atoi(argv[1]);
+  start_port = atoi(argv[1]);
   max_port = atoi(argv[2]);
-  current_port = port_start;
+  current_port = start_port;
 
   // interupt sigchld
   struct sigaction act;
@@ -239,7 +246,7 @@ int main(int argc, char ** argv){
   //Setting up server
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-  servaddr.sin_port = htons(port_start);
+  servaddr.sin_port = htons(start_port);
 
   int bindcheck= bind(listenfd, (struct sockaddr *) &servaddr, sizeof(servaddr));
 
