@@ -1,6 +1,7 @@
 #include "unp.h"
 
-//Structs for easierstruct DATAPKT
+//Structs for easier handling of each type of packet sent
+struct DATAPKT
 {
     uint16_t opcode;
     uint16_t blkNumber;
@@ -18,7 +19,7 @@ struct ERRPKT
     uint16_t opcode;
     uint16_t errCode;
     char errMsg[MAX_ERR_SIZE];
-}; handling of each type of packet sent
+}; 
 struct REQPKT
 {
     uint16_t opcode;
