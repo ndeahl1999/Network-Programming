@@ -232,7 +232,7 @@ int put_request(char * fileName, struct sockaddr_in clientaddr){
   memset(&ack_pkt,0, sizeof(struct ACKPKT));
   memset(&child_addr, 0, sizeof(struct sockaddr_in));
 
-  FILE* fp = fopen(fileName, "r");
+  FILE* fp = fopen(fileName, "w");
 
   if (fp == NULL)
   {
@@ -300,6 +300,7 @@ int put_request(char * fileName, struct sockaddr_in clientaddr){
   }
 
 
+  return 1;
 
 }
 
