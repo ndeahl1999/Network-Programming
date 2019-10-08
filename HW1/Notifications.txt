@@ -1,0 +1,8 @@
+Utilize a hashmap
+
+- Hash the location of the stop
+  - Ensure no collisions
+
+- Hash the location of the vehicle
+  - Get what bin it belongs in
+    - return that as the closest stop location
