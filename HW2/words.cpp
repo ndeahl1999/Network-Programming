@@ -1,4 +1,6 @@
 #include <iostream>
+#include <vector>
+#include <fstream>
 #include <string>
 #include <map>
 #include <set>
@@ -87,11 +89,43 @@ void new_guess(string answer, string guess){
 void read_dictionary(){
 
 
+
 }
 int main(int argc, char** argv){
 
-  string answer = "guess";
+  // string answer = "guess";
   string guess = "cross";
+
+  int seed = atoi(argv[1]);
+  string dic_file = argv[2];
+  int max_length = atoi(argv[3]);
+
+  cout<< "seed is " << seed<< " dict is "<<dic_file<<endl;
+
+
+  ifstream infile(dic_file);
+  string line;
+  vector<string> words;
+
+  // read in all the words
+  while(infile >> line){
+    words.push_back(line);
+  }
+
+  srand(seed);
+
+  // cout<< rand() % words.size() << endl;
+
+  string answer = words[rand() % words.size()];
+
+  // cout<<"the secret word is "<< words[rand() % words.size()]<<endl;
+
+  // sort the read in list of words
+  sort(words.begin(), words.end());
+
+
+
+  
 
   new_guess(answer, guess);
 
