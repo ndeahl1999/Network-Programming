@@ -114,11 +114,9 @@ int main(int argc, char** argv){
 
   srand(seed);
 
-  // cout<< rand() % words.size() << endl;
 
   string answer = words[rand() % words.size()];
 
-  // cout<<"the secret word is "<< words[rand() % words.size()]<<endl;
 
   // sort the read in list of words
   sort(words.begin(), words.end());
