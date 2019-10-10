@@ -4,6 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -17,12 +18,27 @@ typedef struct {
 
 } connection;
 
+string connect_msg = "Welcome to Guess the Word, please enter your username.\n";
+
 int seed;
 unsigned short port;
-string dic_file;
+char * dic_file;
 int long_word_len;
 vector <connection> user_list;
 int num_users = 0;
+
+int user_check(string username){
+  transform(username.begin(), username.end(), username.begin(), ::tolower);
+  for(int i = 0; i < user_list.size(); i++){
+    string c_username = user_list[i].username;
+    transform(c_username.begin(), c_username.end(), c_username.begin(), ::tolower);
+    if(c_username.compare(username) == 0){
+      return 0;
+    }
+  }
+  
+  return 1;
+}
 
 int main(int argc, char ** argv){
   //check for correct number fo arguments
@@ -121,6 +137,37 @@ int main(int argc, char ** argv){
       }
 
       cout << "New connection from " << inet_ntoa(client_addr.sin_addr) << " on port " << ntohs(client_addr.sin_port) << "\n"; 
+
+      send(new_sock, connect_msg.c_str(), strlen(connect_msg.c_str()), 0);
+
+      int valid_user = 0;
+
+      while(!valid_user){
+        int n = recv(new_sock, buffer, sizeof(buffer), 0);
+        string tmp_name = string(buffer);
+
+        valid_user = user_check(tmp_name);
+
+        if(valid_user){
+          connection new_user;
+          new_user.username = tmp_name;
+          new_user.conn_fd = new_sock;
+          user_list.push_back(new_user);
+
+        }else{
+          //send new username
+          
+        }
+      }
+
+      string connect_success = "Let's start playing, " + string(buffer)+ "\n";
+
+      
+      
+
+      send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0);
+      
+      
     }
 
   }
