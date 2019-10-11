@@ -15,7 +15,6 @@ using namespace std;
 typedef struct {
   string username;
   int conn_fd;
-  struct sockaddr_in addr;
 
 } connection;
 
@@ -156,19 +155,26 @@ int main(int argc, char ** argv){
           user_list.push_back(new_user);
 
         }else{
-          //send new username
+          
+          string name_error = "Username " + tmp_name + " is already taken, please enter a different username\n";
+          send(new_sock, name_error.c_str(), strlen(name_error.c_str()),0);
           
         }
       }
 
       string connect_success = "Let's start playing, " + string(buffer)+ "\n";
+      send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0); 
+    }
 
-      
-      
+    for(int i = 0; i < user_list.size(); i++){
+      connection user = user_list[i];
 
-      send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0);
-      
-      
+      if(FD_ISSET(user.conn_fd, &read_fds)){
+        //recieve guess from user 
+
+
+      }
+
     }
 
   }
