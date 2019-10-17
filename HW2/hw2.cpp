@@ -248,9 +248,14 @@ int main(int argc, char ** argv){
       
       string username="";
       while(!valid_user){
-        recv(new_sock, buffer, sizeof(buffer), 0);
-        string tmp_name = string(buffer);
-
+        int n = recv(new_sock, buffer, sizeof(buffer), 0);
+        char *temp = (char*)malloc(n * sizeof(char));
+        for (int i=0; i<512; i++) {
+          printf("%02x ", buffer[i]);
+          if ((i+1)%16 == 0) printf("\n");
+        }
+        strncpy(temp,buffer,n);
+        string tmp_name = string(temp);
         valid_user = user_check(tmp_name);
 
         if(valid_user){
