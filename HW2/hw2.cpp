@@ -160,10 +160,12 @@ int main(int argc, char ** argv){
           send(new_sock, name_error.c_str(), strlen(name_error.c_str()),0);
           
         }
+        
       }
-
+      
       string connect_success = "Let's start playing, " + string(buffer)+ "\n";
       send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0); 
+      bzero(&buffer, sizeof(buffer));
     }
 
     for(int i = 0; i < user_list.size(); i++){
@@ -171,7 +173,13 @@ int main(int argc, char ** argv){
 
       if(FD_ISSET(user.conn_fd, &read_fds)){
         //recieve guess from user 
+        int n = recv(user.conn_fd, &buffer, sizeof(buffer), 0);
 
+        cout<< "Received guess " << buffer << " from " << user.username << "\n";
+
+        string return_guess = "You guessed " + string(buffer) + "\n";
+
+        send(user.conn_fd, return_guess.c_str(),strlen(return_guess.c_str()), 0);
 
       }
 
