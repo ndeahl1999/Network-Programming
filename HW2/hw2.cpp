@@ -246,6 +246,7 @@ int main(int argc, char ** argv){
       int valid_user = 0;
 
       
+      string username="";
       while(!valid_user){
         recv(new_sock, buffer, sizeof(buffer), 0);
         string tmp_name = string(buffer);
@@ -254,7 +255,8 @@ int main(int argc, char ** argv){
 
         if(valid_user){
           connection new_user;
-          tmp_name = tmp_name.substr(0, tmp_name.size()-1);
+          //tmp_name = tmp_name.substr(0, tmp_name.size()-1);
+          username = tmp_name;
           new_user.username = tmp_name;
           new_user.conn_fd = new_sock;
           user_list.push_back(new_user);
@@ -270,7 +272,7 @@ int main(int argc, char ** argv){
       
       cout<<"secret is "<<answer<<endl;
       cout<<"sending first"<<endl;
-      string connect_success = "Let's start playing, " + string(buffer)+ "\n";
+      string connect_success = "Let's start playing, " + username+ "\n";
       send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0); 
 
       cout<<"sending second"<<endl;
@@ -292,7 +294,7 @@ int main(int argc, char ** argv){
           // cout<< "Received guess " << buffer << " from " << user.username << "\n";
 
           string string_buffer = string(buffer);
-          string_buffer = string_buffer.substr(0, string_buffer.size()-1);
+          //string_buffer = string_buffer.substr(0, string_buffer.size()-1);
           new_guess(user.username, answer, string_buffer);
 
           string return_guess = "You guessed " + string_buffer + "\n";
