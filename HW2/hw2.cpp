@@ -77,7 +77,7 @@ int correct_characters(const string answer, const string guess){
 
 int correct_placement(string answer, string guess){
   if(answer.length() != guess.length()){
-    cout<<"not the same length"<<endl;
+    cout<<"Invalid guess length. The secret word is "<<answer.length()<<" letter(s)."<<endl;
     return -1;
   }
 
@@ -93,6 +93,22 @@ int correct_placement(string answer, string guess){
   return count;
 }
 
+// wrapper function for the print statement
+// about correct characters and placement
+void new_guess(string username, string answer, string guess){
+
+  int correct_chars = correct_characters(answer, guess);
+
+  int correct_place = correct_placement(answer, guess);
+  if(correct_place == -1){
+    return;
+  }
+
+  cout<<username<<" guessed " << guess << ": "<< correct_chars
+    <<" letter(s) were correct and " << correct_place<< " letter(s)"
+    << " were correctly placed."<<endl;
+ 
+}
 
 // function repsonsible for making sure username is unique 
 // returns 1 if it is
@@ -238,6 +254,7 @@ int main(int argc, char ** argv){
 
         if(valid_user){
           connection new_user;
+          tmp_name = tmp_name.substr(0, tmp_name.size()-1);
           new_user.username = tmp_name;
           new_user.conn_fd = new_sock;
           user_list.push_back(new_user);
@@ -251,6 +268,7 @@ int main(int argc, char ** argv){
         
       }
       
+      cout<<"secret is "<<answer<<endl;
       cout<<"sending first"<<endl;
       string connect_success = "Let's start playing, " + string(buffer)+ "\n";
       send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0); 
@@ -258,19 +276,28 @@ int main(int argc, char ** argv){
       cout<<"sending second"<<endl;
 
       string players = "There are " + to_string(user_list.size())  + " player(s) playing. The secret word is " + to_string(answer.size()) + " letter(s).\n";
+      printf("%s\n", players.c_str());
+      // cout<<players<<endl;
       send(new_sock, players.c_str(), strlen(players.c_str()), 0); 
       bzero(&buffer, sizeof(buffer));
     }
 
     for(int i = 0; i < user_list.size(); i++){
       connection user = user_list[i];
+    
 
       if(FD_ISSET(user.conn_fd, &read_fds)){
         //recieve guess from user 
         if(recv(user.conn_fd, &buffer, sizeof(buffer), 0) >0){
-          cout<< "Received guess " << buffer << " from " << user.username << "\n";
+          // cout<< "Received guess " << buffer << " from " << user.username << "\n";
 
-          string return_guess = "You guessed " + string(buffer) + "\n";
+          string string_buffer = string(buffer);
+          string_buffer = string_buffer.substr(0, string_buffer.size()-1);
+          new_guess(user.username, answer, string_buffer);
+
+          string return_guess = "You guessed " + string_buffer + "\n";
+
+
 
           send(user.conn_fd, return_guess.c_str(),strlen(return_guess.c_str()), 0);
         }
