@@ -1,7 +1,9 @@
 //  extern "C"{
 //    #include "unp.h"
 //  }
+#include <fstream>
 #include <iostream>
+#include <string>
 #include <algorithm>
 #include <vector>
 #include <string.h>
@@ -10,6 +12,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <map>
+#include <set>
 using namespace std;
 
 typedef struct {
@@ -27,6 +31,71 @@ int long_word_len;
 vector <connection> user_list;
 int num_users = 0;
 
+int correct_characters(const string answer, const string guess){
+
+  map<char, int> answer_chars = map<char, int>();
+
+  // add the counts of all characters to the map
+  for(int i=0;i<answer.length();i++){
+    answer_chars[answer[i]]+=1;
+  }
+
+  int count=0;
+
+  // for every character, if it's in the map
+  // increment count, and remove 1 from the map
+  for(int i=0;i<guess.length();i++){
+    if(answer_chars[guess[i]] != 0){
+      count++;
+      answer_chars[guess[i]]--;
+    }
+  }
+  /*
+
+  INITIAL IMPLEMENTATION, WRONGkk
+  set<char> guess_chars = set<char>();
+
+  // add the chars of guess to a set, keeping only uniques
+  for(int i=0;i<guess.length();i++){
+    guess_chars.insert(guess[i]);
+  }
+
+  int count =0;
+  // loop through set, and if add to the count
+  // the value at key c
+  for(char c: guess_chars){
+    count+=answer_chars[c];
+    cout<<"count is "<< count <<endl;
+  a
+
+*/
+
+  return count;
+}
+
+
+
+int correct_placement(string answer, string guess){
+  if(answer.length() != guess.length()){
+    cout<<"not the same length"<<endl;
+    return -1;
+  }
+
+  int count = 0;
+
+  // count up the amount of same letters it has
+  for(int i=0;i<answer.length();i++){
+    if(answer[i] == guess[i]){
+      count++;
+    }
+  }
+
+  return count;
+}
+
+
+// function repsonsible for making sure username is unique 
+// returns 1 if it is
 int user_check(string username){
   transform(username.begin(), username.end(), username.begin(), ::tolower);
   for(int i = 0; i < user_list.size(); i++){
@@ -52,6 +121,24 @@ int main(int argc, char ** argv){
   port = atoi(argv[2]);
   dic_file = argv[3];
   long_word_len = atoi(argv[4]);
+
+  ifstream infile(dic_file);
+  string line;
+  vector<string> words;
+
+  // read in all the words
+  while(infile >> line){
+    words.push_back(line);
+  }
+
+  srand(seed);
+
+
+
+  string answer = words[rand() % words.size()];
+
+  cout<< answer<<endl;
+
 
   //cout << "Seed is " << seed << " on port " << port << "\n";
 
@@ -142,8 +229,9 @@ int main(int argc, char ** argv){
 
       int valid_user = 0;
 
+      
       while(!valid_user){
-        int n = recv(new_sock, buffer, sizeof(buffer), 0);
+        recv(new_sock, buffer, sizeof(buffer), 0);
         string tmp_name = string(buffer);
 
         valid_user = user_check(tmp_name);
@@ -163,8 +251,14 @@ int main(int argc, char ** argv){
         
       }
       
+      cout<<"sending first"<<endl;
       string connect_success = "Let's start playing, " + string(buffer)+ "\n";
       send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0); 
+
+      cout<<"sending second"<<endl;
+
+      string players = "There are " + to_string(user_list.size())  + " player(s) playing. The secret word is " + to_string(answer.size()) + " letter(s).\n";
+      send(new_sock, players.c_str(), strlen(players.c_str()), 0); 
       bzero(&buffer, sizeof(buffer));
     }
 
@@ -173,13 +267,15 @@ int main(int argc, char ** argv){
 
       if(FD_ISSET(user.conn_fd, &read_fds)){
         //recieve guess from user 
-        int n = recv(user.conn_fd, &buffer, sizeof(buffer), 0);
+        if(recv(user.conn_fd, &buffer, sizeof(buffer), 0) >0){
+          cout<< "Received guess " << buffer << " from " << user.username << "\n";
 
-        cout<< "Received guess " << buffer << " from " << user.username << "\n";
+          string return_guess = "You guessed " + string(buffer) + "\n";
 
-        string return_guess = "You guessed " + string(buffer) + "\n";
+          send(user.conn_fd, return_guess.c_str(),strlen(return_guess.c_str()), 0);
+        }
 
-        send(user.conn_fd, return_guess.c_str(),strlen(return_guess.c_str()), 0);
+
 
       }
 
