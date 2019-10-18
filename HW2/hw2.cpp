@@ -201,6 +201,7 @@ int main(int argc, char ** argv){
 
 
   while(1){
+    bzero(buffer, strlen(buffer));
     //clear the socket set
     FD_ZERO(&read_fds);
     //add master socket to set
@@ -250,12 +251,12 @@ int main(int argc, char ** argv){
       while(!valid_user){
         int n = recv(new_sock, buffer, sizeof(buffer), 0);
         char *temp = (char*)malloc(n * sizeof(char));
-        for (int i=0; i<512; i++) {
-          printf("%02x ", buffer[i]);
-          if ((i+1)%16 == 0) printf("\n");
-        }
-        strncpy(temp,buffer,n);
-        string tmp_name = string(temp);
+        //for (int i=0; i<512; i++) {
+          //printf("%02x ", buffer[i]);
+          //if ((i+1)%16 == 0) printf("\n");
+        //}
+        strncpy(temp,buffer,n-1);
+        string tmp_name(temp);
         valid_user = user_check(tmp_name);
 
         if(valid_user){
@@ -283,8 +284,7 @@ int main(int argc, char ** argv){
       cout<<"sending second"<<endl;
 
       string players = "There are " + to_string(user_list.size())  + " player(s) playing. The secret word is " + to_string(answer.size()) + " letter(s).\n";
-      printf("%s\n", players.c_str());
-      // cout<<players<<endl;
+      printf("%s", players.c_str());
       send(new_sock, players.c_str(), strlen(players.c_str()), 0); 
       bzero(&buffer, sizeof(buffer));
     }
@@ -292,19 +292,19 @@ int main(int argc, char ** argv){
     for(int i = 0; i < user_list.size(); i++){
       connection user = user_list[i];
     
-
+      
       if(FD_ISSET(user.conn_fd, &read_fds)){
         //recieve guess from user 
-        if(recv(user.conn_fd, &buffer, sizeof(buffer), 0) >0){
+        int n = recv(user.conn_fd, &buffer, sizeof(buffer), 0);
+        if(n >0){
           // cout<< "Received guess " << buffer << " from " << user.username << "\n";
-
-          string string_buffer = string(buffer);
+          char*guess = (char *)malloc(n* sizeof(char));
+          strncpy(guess, buffer, n-1);
+          string string_buffer(guess);
           //string_buffer = string_buffer.substr(0, string_buffer.size()-1);
           new_guess(user.username, answer, string_buffer);
 
           string return_guess = "You guessed " + string_buffer + "\n";
-
-
 
           send(user.conn_fd, return_guess.c_str(),strlen(return_guess.c_str()), 0);
         }
