@@ -77,7 +77,7 @@ int correct_characters(const string answer, const string guess){
 
 int correct_placement(string answer, string guess){
   if(answer.length() != guess.length()){
-    cout<<"Invalid guess length. The secret word is "<<answer.length()<<" letter(s)."<<endl;
+    
     return -1;
   }
 
@@ -95,18 +95,18 @@ int correct_placement(string answer, string guess){
 
 // wrapper function for the print statement
 // about correct characters and placement
-void new_guess(string username, string answer, string guess){
+string new_guess(string username, string answer, string guess){
 
   int correct_chars = correct_characters(answer, guess);
 
   int correct_place = correct_placement(answer, guess);
   if(correct_place == -1){
-    return;
+    return "Invalid guess length. The secret word is " + to_string(answer.length()) + " letter(s).\n";
   }
 
-  cout<<username<<" guessed " << guess << ": "<< correct_chars
-    <<" letter(s) were correct and " << correct_place<< " letter(s)"
-    << " were correctly placed."<<endl;
+  return username +" guessed " + guess + ": " + to_string(correct_chars)
+    +" letter(s) were correct and " + to_string(correct_place) + " letter(s)"
+    + " were correctly placed.\n";
  
 }
 
@@ -123,6 +123,14 @@ int user_check(string username){
   }
   
   return 1;
+}
+
+void send_to_all(string message){
+ for(int j = 0; j< user_list.size(); j++){
+    send(user_list[j].conn_fd, message.c_str(), strlen(message.c_str()), 0);
+  }
+
+
 }
 
 int main(int argc, char ** argv){
@@ -302,11 +310,26 @@ int main(int argc, char ** argv){
           strncpy(guess, buffer, n-1);
           string string_buffer(guess);
           //string_buffer = string_buffer.substr(0, string_buffer.size()-1);
-          new_guess(user.username, answer, string_buffer);
+          string return_statement;
+          if(answer.compare(string_buffer) != 0){
+            return_statement = new_guess(user.username, answer, string_buffer);
 
-          string return_guess = "You guessed " + string_buffer + "\n";
+            if(string_buffer.size() != answer.size()){
+              send(user.conn_fd, return_statement.c_str(), strlen(return_statement.c_str()),0);
+            }else{
+              send_to_all(return_statement);
+            } 
+          }else{
+             //correct guess
+            return_statement = user.username +  " has correctly guessed the word " + answer + "\n";
+            send_to_all(return_statement);
 
-          send(user.conn_fd, return_guess.c_str(),strlen(return_guess.c_str()), 0);
+          }
+        
+          
+        }else{
+          //close(user_list[i].conn_fd);
+          //user_list.erase(user_list.begin() + i);
         }
 
 
