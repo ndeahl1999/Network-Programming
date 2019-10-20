@@ -159,9 +159,7 @@ int main(int argc, char ** argv){
 
 
 
-  string answer = words[rand() % words.size()];
 
-  cout<< answer<<endl;
 
 
   //cout << "Seed is " << seed << " on port " << port << "\n";
@@ -208,133 +206,159 @@ int main(int argc, char ** argv){
   int max_sd;
 
 
+  // main game loop
   while(1){
-    bzero(buffer, strlen(buffer));
-    //clear the socket set
-    FD_ZERO(&read_fds);
-    //add master socket to set
-    FD_SET(listen_fd, &read_fds);
-    max_sd = listen_fd;
 
-    //check and set all listener ports
-    // including the user connections
-    for(int i = 0; i < user_list.size(); i++){
-      int sd = user_list[i].conn_fd;
-      //check if the file descriptor is set and add to socket set
-      if(sd > 0)
-        FD_SET(sd, &read_fds);
-      
-      //necessary for select
-      if(sd > max_sd )
-        max_sd = sd;
-    }
+  
+    // pick a new word
+    string answer = words[rand() % words.size()];
+    cout<<answer<<endl;
 
-    //select call for incoming connections. 
-    int retval = select(max_sd + 1, &read_fds, NULL, NULL, NULL);
 
-    if ((retval < 0) && (errno!=EINTR)){   
-      cerr << "select error";   
-    } 
+    while(1){
+      bzero(buffer, strlen(buffer));
+      //clear the socket set
+      FD_ZERO(&read_fds);
+      //add master socket to set
+      FD_SET(listen_fd, &read_fds);
+      max_sd = listen_fd;
 
-    //if the listener socket is set, then there
-    // is a new connection coming in. 
-    if(FD_ISSET(listen_fd, &read_fds)){
-      struct sockaddr_in client_addr;
-      int new_sock; 
-      int addrlen = sizeof(client_addr);
-
-      if( (new_sock = accept(listen_fd, (struct sockaddr *) &client_addr, (socklen_t*) &addrlen))<0){
-        perror("accept");
-        exit(EXIT_FAILURE);
-      }
-
-      cout << "New connection from " << inet_ntoa(client_addr.sin_addr) << " on port " << ntohs(client_addr.sin_port) << "\n"; 
-
-      send(new_sock, connect_msg.c_str(), strlen(connect_msg.c_str()), 0);
-
-      int valid_user = 0;
-
-      
-      string username="";
-      while(!valid_user){
-        int n = recv(new_sock, buffer, sizeof(buffer), 0);
-        char *temp = (char*)malloc(n * sizeof(char));
-        //for (int i=0; i<512; i++) {
-          //printf("%02x ", buffer[i]);
-          //if ((i+1)%16 == 0) printf("\n");
-        //}
-        strncpy(temp,buffer,n-1);
-        string tmp_name(temp);
-        valid_user = user_check(tmp_name);
-
-        if(valid_user){
-          connection new_user;
-          //tmp_name = tmp_name.substr(0, tmp_name.size()-1);
-          username = tmp_name;
-          new_user.username = tmp_name;
-          new_user.conn_fd = new_sock;
-          user_list.push_back(new_user);
-
-        }else{
-          
-          string name_error = "Username " + tmp_name + " is already taken, please enter a different username\n";
-          send(new_sock, name_error.c_str(), strlen(name_error.c_str()),0);
-          
-        }
+      //check and set all listener ports
+      // including the user connections
+      for(int i = 0; i < user_list.size(); i++){
+        int sd = user_list[i].conn_fd;
+        //check if the file descriptor is set and add to socket set
+        if(sd > 0)
+          FD_SET(sd, &read_fds);
         
+        //necessary for select
+        if(sd > max_sd )
+          max_sd = sd;
       }
-      
-      cout<<"secret is "<<answer<<endl;
-      cout<<"sending first"<<endl;
-      string connect_success = "Let's start playing, " + username+ "\n";
-      send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0); 
 
-      cout<<"sending second"<<endl;
+      //select call for incoming connections. 
+      int retval = select(max_sd + 1, &read_fds, NULL, NULL, NULL);
 
-      string players = "There are " + to_string(user_list.size())  + " player(s) playing. The secret word is " + to_string(answer.size()) + " letter(s).\n";
-      printf("%s", players.c_str());
-      send(new_sock, players.c_str(), strlen(players.c_str()), 0); 
-      bzero(&buffer, sizeof(buffer));
-    }
+      if ((retval < 0) && (errno!=EINTR)){   
+        cerr << "select error";   
+      } 
 
-    for(int i = 0; i < user_list.size(); i++){
-      connection user = user_list[i];
-    
-      
-      if(FD_ISSET(user.conn_fd, &read_fds)){
-        //recieve guess from user 
-        int n = recv(user.conn_fd, &buffer, sizeof(buffer), 0);
-        if(n >0){
-          // cout<< "Received guess " << buffer << " from " << user.username << "\n";
-          char*guess = (char *)malloc(n* sizeof(char));
-          strncpy(guess, buffer, n-1);
-          string string_buffer(guess);
-          //string_buffer = string_buffer.substr(0, string_buffer.size()-1);
-          string return_statement;
-          if(answer.compare(string_buffer) != 0){
-            return_statement = new_guess(user.username, answer, string_buffer);
+      //if the listener socket is set, then there
+      // is a new connection coming in. 
+      if(FD_ISSET(listen_fd, &read_fds)){
+        struct sockaddr_in client_addr;
+        int new_sock; 
+        int addrlen = sizeof(client_addr);
 
-            if(string_buffer.size() != answer.size()){
-              send(user.conn_fd, return_statement.c_str(), strlen(return_statement.c_str()),0);
-            }else{
-              send_to_all(return_statement);
-            } 
+        if( (new_sock = accept(listen_fd, (struct sockaddr *) &client_addr, (socklen_t*) &addrlen))<0){
+          perror("accept");
+          exit(EXIT_FAILURE);
+        }
+
+        cout << "New connection from " << inet_ntoa(client_addr.sin_addr) << " on port " << ntohs(client_addr.sin_port) << "\n"; 
+
+        send(new_sock, connect_msg.c_str(), strlen(connect_msg.c_str()), 0);
+
+        int valid_user = 0;
+
+        
+        string username="";
+        while(!valid_user){
+          int n = recv(new_sock, buffer, sizeof(buffer), 0);
+          char *temp = (char*)malloc(n * sizeof(char));
+          //for (int i=0; i<512; i++) {
+            //printf("%02x ", buffer[i]);
+            //if ((i+1)%16 == 0) printf("\n");
+          //}
+          strncpy(temp,buffer,n-1);
+          string tmp_name(temp);
+          valid_user = user_check(tmp_name);
+
+          if(valid_user){
+            connection new_user;
+            //tmp_name = tmp_name.substr(0, tmp_name.size()-1);
+            username = tmp_name;
+            new_user.username = tmp_name;
+            new_user.conn_fd = new_sock;
+            user_list.push_back(new_user);
+
           }else{
-             //correct guess
-            return_statement = user.username +  " has correctly guessed the word " + answer + "\n";
-            send_to_all(return_statement);
-
+            
+            string name_error = "Username " + tmp_name + " is already taken, please enter a different username\n";
+            send(new_sock, name_error.c_str(), strlen(name_error.c_str()),0);
+            
           }
-        
           
-        }else{
-          //close(user_list[i].conn_fd);
-          //user_list.erase(user_list.begin() + i);
+        }
+        
+        string connect_success = "Let's start playing, " + username+ "\n";
+        send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0); 
+
+
+        string players = "There are " + to_string(user_list.size())  + " player(s) playing. The secret word is " + to_string(answer.size()) + " letter(s).\n";
+        printf("%s", players.c_str());
+        send(new_sock, players.c_str(), strlen(players.c_str()), 0); 
+        bzero(&buffer, sizeof(buffer));
+      }
+
+      bool correct = false;
+      for(int i = 0; i < user_list.size(); i++){
+        connection user = user_list[i];
+      
+        
+        if(FD_ISSET(user.conn_fd, &read_fds)){
+        bzero(&buffer, sizeof(buffer));
+          //recieve guess from user 
+          int n = recv(user.conn_fd, &buffer, sizeof(buffer), 0);
+          if(n >0){
+            // cout<< "Received guess " << buffer << " from " << user.username << "\n";
+            char*guess = (char *)malloc(n* sizeof(char));
+            strncpy(guess, buffer, n-1);
+            string string_buffer(guess);
+            //string_buffer = string_buffer.substr(0, string_buffer.size()-1);
+            string return_statement;
+            if(answer.compare(string_buffer) != 0){
+              return_statement = new_guess(user.username, answer, string_buffer);
+              cout<<answer<<" and "<<string_buffer<<endl;
+
+              if(string_buffer.size() != answer.size()){
+                send(user.conn_fd, return_statement.c_str(), strlen(return_statement.c_str()),0);
+              }else{
+                send_to_all(return_statement);
+              } 
+            }else{
+               //correct guess
+              return_statement = user.username +  " has correctly guessed the word " + answer + "\n";
+              send_to_all(return_statement);
+              correct=true;
+              break;
+
+            }
+          
+            
+          }else{
+            //close(user_list[i].conn_fd);
+            //user_list.erase(user_list.begin() + i);
+          }
+
+
+
         }
 
-
-
       }
+      // close all connections here, and break out of the game loop
+      if(correct == true){
+        for(int j=user_list.size()-1;j>=0;j--){
+
+          // erase from the end to prevent shifting while removing
+          connection user = user_list[j];
+          close(user.conn_fd);
+          user_list.erase(user_list.begin()+j);
+
+        }
+        break;
+      }
+
 
     }
 
