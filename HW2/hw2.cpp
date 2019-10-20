@@ -22,7 +22,6 @@ typedef struct {
 
 } connection;
 
-string connect_msg = "Welcome to Guess the Word, please enter your username.\n";
 
 int seed;
 unsigned short port;
@@ -31,6 +30,8 @@ int long_word_len;
 vector <connection> user_list;
 int num_users = 0;
 
+
+// helper function to get amount of correct letters in any place
 int correct_characters(const string answer, const string guess){
 
   map<char, int> answer_chars = map<char, int>();
@@ -50,34 +51,14 @@ int correct_characters(const string answer, const string guess){
       answer_chars[guess[i]]--;
     }
   }
-  /*
-
-  INITIAL IMPLEMENTATION, WRONGkk
-  set<char> guess_chars = set<char>();
-
-  // add the chars of guess to a set, keeping only uniques
-  for(int i=0;i<guess.length();i++){
-    guess_chars.insert(guess[i]);
-  }
-
-  int count =0;
-  // loop through set, and if add to the count
-  // the value at key c
-  for(char c: guess_chars){
-    count+=answer_chars[c];
-    cout<<"count is "<< count <<endl;
-  a
-
-*/
-
   return count;
 }
 
 
 
+// helper function to get the amount of correct letters in proper place
 int correct_placement(string answer, string guess){
   if(answer.length() != guess.length()){
-    
     return -1;
   }
 
@@ -100,6 +81,8 @@ string new_guess(string username, string answer, string guess){
   int correct_chars = correct_characters(answer, guess);
 
   int correct_place = correct_placement(answer, guess);
+
+  // if they guessed the wrong # of characters
   if(correct_place == -1){
     return "Invalid guess length. The secret word is " + to_string(answer.length()) + " letter(s).\n";
   }
@@ -125,6 +108,8 @@ int user_check(string username){
   return 1;
 }
 
+
+// helper function that sends a message to everyone that is connected
 void send_to_all(string message){
  for(int j = 0; j< user_list.size(); j++){
     send(user_list[j].conn_fd, message.c_str(), strlen(message.c_str()), 0);
@@ -156,13 +141,6 @@ int main(int argc, char ** argv){
   }
 
   srand(seed);
-
-
-
-
-
-
-  //cout << "Seed is " << seed << " on port " << port << "\n";
 
   //initialize server
   struct sockaddr_in servaddr;
@@ -199,26 +177,24 @@ int main(int argc, char ** argv){
 
   fd_set read_fds;
   
-
   cout<< "Server up on port " << ntohs(servaddr.sin_port) << "\n";
 
   char buffer[1025];
   int max_sd;
 
-
   // main game loop
   while(1){
 
-  
     // pick a new word
     string answer = words[rand() % words.size()];
     cout<<answer<<endl;
 
-
     while(1){
       bzero(buffer, strlen(buffer));
+
       //clear the socket set
       FD_ZERO(&read_fds);
+
       //add master socket to set
       FD_SET(listen_fd, &read_fds);
       max_sd = listen_fd;
@@ -226,7 +202,9 @@ int main(int argc, char ** argv){
       //check and set all listener ports
       // including the user connections
       for(int i = 0; i < user_list.size(); i++){
+
         int sd = user_list[i].conn_fd;
+
         //check if the file descriptor is set and add to socket set
         if(sd > 0)
           FD_SET(sd, &read_fds);
@@ -255,35 +233,39 @@ int main(int argc, char ** argv){
           exit(EXIT_FAILURE);
         }
 
+        // debug that we got a new connection
         cout << "New connection from " << inet_ntoa(client_addr.sin_addr) << " on port " << ntohs(client_addr.sin_port) << "\n"; 
 
+        string connect_msg = "Welcome to Guess the Word, please enter your username.\n";
         send(new_sock, connect_msg.c_str(), strlen(connect_msg.c_str()), 0);
 
         int valid_user = 0;
-
         
         string username="";
+
+
         while(!valid_user){
+
           int n = recv(new_sock, buffer, sizeof(buffer), 0);
+          
+          // get just the username without extra buffer
           char *temp = (char*)malloc(n * sizeof(char));
-          //for (int i=0; i<512; i++) {
-            //printf("%02x ", buffer[i]);
-            //if ((i+1)%16 == 0) printf("\n");
-          //}
           strncpy(temp,buffer,n-1);
           string tmp_name(temp);
           valid_user = user_check(tmp_name);
 
           if(valid_user){
+
+            // store a new player in the vector to prevent duplicate names
             connection new_user;
-            //tmp_name = tmp_name.substr(0, tmp_name.size()-1);
             username = tmp_name;
             new_user.username = tmp_name;
             new_user.conn_fd = new_sock;
             user_list.push_back(new_user);
 
-          }else{
-            
+          }
+          // otherwise it's already been taken
+          else{
             string name_error = "Username " + tmp_name + " is already taken, please enter a different username\n";
             send(new_sock, name_error.c_str(), strlen(name_error.c_str()),0);
             
@@ -291,12 +273,14 @@ int main(int argc, char ** argv){
           
         }
         
+
+        // send initial welcome message
         string connect_success = "Let's start playing, " + username+ "\n";
         send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0); 
 
 
+        // send initial info message about # of players
         string players = "There are " + to_string(user_list.size())  + " player(s) playing. The secret word is " + to_string(answer.size()) + " letter(s).\n";
-        printf("%s", players.c_str());
         send(new_sock, players.c_str(), strlen(players.c_str()), 0); 
         bzero(&buffer, sizeof(buffer));
       }
@@ -307,44 +291,57 @@ int main(int argc, char ** argv){
       
         
         if(FD_ISSET(user.conn_fd, &read_fds)){
-        bzero(&buffer, sizeof(buffer));
+
+          // reset the buffer in case
+          bzero(&buffer, sizeof(buffer));
+
           //recieve guess from user 
           int n = recv(user.conn_fd, &buffer, sizeof(buffer), 0);
           if(n >0){
-            // cout<< "Received guess " << buffer << " from " << user.username << "\n";
+
+            // store the guessed word, make sure not to store extra buffer
             char*guess = (char *)malloc(n* sizeof(char));
             strncpy(guess, buffer, n-1);
-            string string_buffer(guess);
-            //string_buffer = string_buffer.substr(0, string_buffer.size()-1);
-            string return_statement;
-            if(answer.compare(string_buffer) != 0){
-              return_statement = new_guess(user.username, answer, string_buffer);
-              cout<<answer<<" and "<<string_buffer<<endl;
 
+            string string_buffer(guess);
+
+            string return_statement;
+
+            // if the guess is not correct
+            if(answer.compare(string_buffer) != 0){
+
+              return_statement = new_guess(user.username, answer, string_buffer);
+
+              // if invalid size
               if(string_buffer.size() != answer.size()){
                 send(user.conn_fd, return_statement.c_str(), strlen(return_statement.c_str()),0);
-              }else{
+              }
+
+              //if valid size but incorrect placement of chars
+              else{
                 send_to_all(return_statement);
               } 
-            }else{
-               //correct guess
+            }
+
+            // if correct guess
+            else{
               return_statement = user.username +  " has correctly guessed the word " + answer + "\n";
               send_to_all(return_statement);
+
+              // variable to know to break out of main loop
               correct=true;
               break;
 
             }
           
             
-          }else{
+          }
+          // if user disconnects
+          else{
             //close(user_list[i].conn_fd);
             //user_list.erase(user_list.begin() + i);
           }
-
-
-
         }
-
       }
       // close all connections here, and break out of the game loop
       if(correct == true){
@@ -356,6 +353,8 @@ int main(int argc, char ** argv){
           user_list.erase(user_list.begin()+j);
 
         }
+
+        // pick a new word
         break;
       }
 
