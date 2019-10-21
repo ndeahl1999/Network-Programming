@@ -84,8 +84,8 @@ string new_guess(string username, string answer, string guess){
 
   // if they guessed the wrong # of characters
   if(correct_place == -1){
-    return "Invalid guess length. The secret word is " + to_string(answer.length()) + " letter(s).\n";
-  }
+    return "Invalid guess length.(" +to_string(guess.length())+") The secret word is " + to_string(answer.length()) + " letter(s).\n";
+  } 
 
   return username +" guessed " + guess + ": " + to_string(correct_chars)
     +" letter(s) were correct and " + to_string(correct_place) + " letter(s)"
@@ -190,7 +190,7 @@ int main(int argc, char ** argv){
     cout<<answer<<endl;
 
     while(1){
-      bzero(buffer, strlen(buffer));
+      bzero(buffer, sizeof(buffer));
 
       //clear the socket set
       FD_ZERO(&read_fds);
@@ -245,7 +245,7 @@ int main(int argc, char ** argv){
 
 
         while(!valid_user){
-
+          bzero(buffer, sizeof(buffer));
           int n = recv(new_sock, buffer, sizeof(buffer), 0);
           
           // get just the username without extra buffer
@@ -282,7 +282,7 @@ int main(int argc, char ** argv){
         // send initial info message about # of players
         string players = "There are " + to_string(user_list.size())  + " player(s) playing. The secret word is " + to_string(answer.size()) + " letter(s).\n";
         send(new_sock, players.c_str(), strlen(players.c_str()), 0); 
-        bzero(&buffer, sizeof(buffer));
+        bzero(buffer, sizeof(buffer));
       }
 
       bool correct = false;
@@ -293,7 +293,7 @@ int main(int argc, char ** argv){
         if(FD_ISSET(user.conn_fd, &read_fds)){
 
           // reset the buffer in case
-          bzero(&buffer, sizeof(buffer));
+          bzero(buffer, sizeof(buffer));
 
           //recieve guess from user 
           int n = recv(user.conn_fd, &buffer, sizeof(buffer), 0);
@@ -306,7 +306,7 @@ int main(int argc, char ** argv){
             string string_buffer(guess);
 
             string return_statement;
-
+            printf("%s and %s\n", answer.c_str(), string_buffer.c_str());
             // if the guess is not correct
             if(answer.compare(string_buffer) != 0){
 
