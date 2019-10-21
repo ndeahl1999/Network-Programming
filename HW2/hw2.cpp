@@ -84,7 +84,7 @@ string new_guess(string username, string answer, string guess){
 
   // if they guessed the wrong # of characters
   if(correct_place == -1){
-    return "Invalid guess length.(" +to_string(guess.length())+") The secret word is " + to_string(answer.length()) + " letter(s).\n";
+    return "Invalid guess length. The secret word is " + to_string(answer.length()) + " letter(s).\n";
   } 
 
   return username +" guessed " + guess + ": " + to_string(correct_chars)
@@ -296,7 +296,7 @@ int main(int argc, char ** argv){
           bzero(buffer, sizeof(buffer));
 
           //recieve guess from user 
-          int n = recv(user.conn_fd, &buffer, sizeof(buffer), 0);
+          int n = recv(user.conn_fd, buffer, sizeof(buffer), 0);
           if(n >0){
 
             // store the guessed word, make sure not to store extra buffer
@@ -321,10 +321,7 @@ int main(int argc, char ** argv){
               else{
                 send_to_all(return_statement);
               } 
-            }
-
-            // if correct guess
-            else{
+             }else{//correct guess 
               return_statement = user.username +  " has correctly guessed the word " + answer + "\n";
               send_to_all(return_statement);
 
@@ -338,8 +335,9 @@ int main(int argc, char ** argv){
           }
           // if user disconnects
           else{
-            //close(user_list[i].conn_fd);
-            //user_list.erase(user_list.begin() + i);
+            close(user_list[i].conn_fd);
+            user_list.erase(user_list.begin() + i);
+            i--;
           }
         }
       }
