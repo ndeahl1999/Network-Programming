@@ -190,7 +190,7 @@ int main(int argc, char ** argv){
     cout<<answer<<endl;
 
     while(1){
-      bzero(buffer, sizeof(buffer));
+      bzero(buffer, strlen(buffer));
 
       //clear the socket set
       FD_ZERO(&read_fds);
@@ -245,7 +245,7 @@ int main(int argc, char ** argv){
 
 
         while(!valid_user){
-          bzero(buffer, sizeof(buffer));
+          bzero(buffer, strlen(buffer));
           int n = recv(new_sock, buffer, sizeof(buffer), 0);
           
           // get just the username without extra buffer
@@ -282,7 +282,7 @@ int main(int argc, char ** argv){
         // send initial info message about # of players
         string players = "There are " + to_string(user_list.size())  + " player(s) playing. The secret word is " + to_string(answer.size()) + " letter(s).\n";
         send(new_sock, players.c_str(), strlen(players.c_str()), 0); 
-        bzero(buffer, sizeof(buffer));
+        bzero(buffer, strlen(buffer));
       }
 
       bool correct = false;
@@ -293,7 +293,7 @@ int main(int argc, char ** argv){
         if(FD_ISSET(user.conn_fd, &read_fds)){
 
           // reset the buffer in case
-          bzero(buffer, sizeof(buffer));
+          bzero(buffer, strlen(buffer));
 
           //recieve guess from user 
           int n = recv(user.conn_fd, buffer, sizeof(buffer), 0);
