@@ -6,7 +6,7 @@
 
 using namespace std;
 
-class Bstation{
+class BaseStation{
   private: 
     string base_id;
     int xpos;
@@ -14,7 +14,7 @@ class Bstation{
     list<string> links_list;
 
   public:
-    Bstation(string base_id, int xpos, int ypos, list<string> links_list);
+    BaseStation(string base_id, int xpos, int ypos, list<string> links_list);
 
     string getID(){return base_id;}
     int getX(){return xpos;}
@@ -24,7 +24,7 @@ class Bstation{
 
 };
 
-  Bstation::Bstation(string base_id, int xpos, int ypos, list<string> links_list){
+  BaseStation::BaseStation(string base_id, int xpos, int ypos, list<string> links_list){
     this->base_id = base_id;
     this->xpos = xpos;
     this->ypos = ypos;
