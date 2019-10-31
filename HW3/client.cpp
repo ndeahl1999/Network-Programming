@@ -1,6 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include "sensor.h"
 
 
 
@@ -38,6 +39,8 @@ int main(int argc, char **argv){
   int initial_x_position = atoi(argv[5]);
   int initial_y_position = atoi(argv[6]);
 
+  Sensor s(sensor_id, sensor_range, initial_x_position, initial_y_position);
+
 
   //connect to control
   
@@ -46,7 +49,17 @@ int main(int argc, char **argv){
   
   // start handling input
   
+  handle_input();
+  
 
   return 1;
+
+}
+
+
+void handle_input(){
+
+
+
 
 }
