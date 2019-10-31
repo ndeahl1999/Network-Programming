@@ -57,7 +57,7 @@ int correct_characters(const string answer, const string guess){
 
 
 // helper function to get the amount of correct letters in proper place
-int correct_placement(string answer, string guess){
+int correct_placement(const string answer, const string guess){
   if(answer.length() != guess.length()){
     return -1;
   }
@@ -76,7 +76,7 @@ int correct_placement(string answer, string guess){
 
 // wrapper function for the print statement
 // about correct characters and placement
-string new_guess(string username, string answer, string guess){
+string new_guess(string username, const string answer, const string guess){
 
   int correct_chars = correct_characters(answer, guess);
 
@@ -110,7 +110,7 @@ int user_check(string username){
 
 
 // helper function that sends a message to everyone that is connected
-void send_to_all(string message){
+void send_to_all(const string message){
  for(int j = 0; j< user_list.size(); j++){
     send(user_list[j].conn_fd, message.c_str(), strlen(message.c_str()), 0);
   }
@@ -190,7 +190,6 @@ int main(int argc, char ** argv){
     cout<<answer<<endl;
 
     while(1){
-        printf("the length is %d\n", strlen(buffer));
       bzero(&buffer, 1025);
 
       //clear the socket set
@@ -244,9 +243,8 @@ int main(int argc, char ** argv){
         
         string username="";
 
-
         while(!valid_user){
-        printf("the length is %d\n", strlen(buffer));
+
           bzero(&buffer, 1025);
           int n = recv(new_sock, buffer, 1025, 0);
           
@@ -270,12 +268,8 @@ int main(int argc, char ** argv){
           else{
             string name_error = "Username " + tmp_name + " is already taken, please enter a different username\n";
             send(new_sock, name_error.c_str(), strlen(name_error.c_str()),0);
-            
           }
-          
         }
-        
-
         // send initial welcome message
         string connect_success = "Let's start playing, " + username+ "\n";
         send(new_sock, connect_success.c_str(), strlen(connect_success.c_str()), 0); 
@@ -284,7 +278,6 @@ int main(int argc, char ** argv){
         // send initial info message about # of players
         string players = "There are " + to_string(user_list.size())  + " player(s) playing. The secret word is " + to_string(answer.size()) + " letter(s).\n";
         send(new_sock, players.c_str(), strlen(players.c_str()), 0); 
-        printf("the length is %d\n", strlen(buffer));
         bzero(&buffer, 1025);
       }
 
@@ -296,7 +289,6 @@ int main(int argc, char ** argv){
         if(FD_ISSET(user.conn_fd, &read_fds)){
 
           // reset the buffer in case
-        printf("the length is %d\n", strlen(buffer));
           bzero(&buffer, 1025);
 
           //recieve guess from user 
@@ -305,12 +297,14 @@ int main(int argc, char ** argv){
 
             // store the guessed word, make sure not to store extra buffer
             char*guess = (char *)malloc(n* sizeof(char));
-            strncpy(guess, buffer, n-1);
+            strcpy(guess,buffer);
+            guess[n-1] = '\0';
 
+            // turn the char* into a string for usage later
             string string_buffer(guess);
 
             string return_statement;
-            printf("%s and %s\n", answer.c_str(), string_buffer.c_str());
+            
             // if the guess is not correct
             if(answer.compare(string_buffer) != 0){
 
@@ -325,7 +319,9 @@ int main(int argc, char ** argv){
               else{
                 send_to_all(return_statement);
               } 
-             }else{//correct guess 
+            }
+            //correct guess 
+            else{
               return_statement = user.username +  " has correctly guessed the word " + answer + "\n";
               send_to_all(return_statement);
 
@@ -334,6 +330,8 @@ int main(int argc, char ** argv){
               break;
 
             }
+
+            free(guess);
           
             
           }
