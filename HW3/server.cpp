@@ -18,8 +18,10 @@ using std::endl;
 using std::string;
 
 
-unsigned short control_port;
+// holds list of all base stations attached
 std::list<BaseStation> base_stations;
+
+
 
 int main(int argc, char ** argv){
   if(argc != 3){
@@ -27,7 +29,7 @@ int main(int argc, char ** argv){
     exit(EXIT_FAILURE);
   }
 
-  control_port = atoi(argv[1]);
+  unsigned short control_port = atoi(argv[1]);
   char* bs_file = argv[2];
 
   std::ifstream bs_list(bs_file);
@@ -35,19 +37,19 @@ int main(int argc, char ** argv){
 
   // while there's more base stations to read
   while(getline(bs_list, line)){
+
+    // streamify a single line
     std::istringstream ss(line);
 
     cout<<line<<endl;
 
-    string temp;
-    string base_id;
-    int xpos;
-    int ypos;
-    int num_links;
+    // read in contents of a line into proper variables
+    string temp, base_id;
+    int x_pos, y_pos, num_links;
     std::list<string> links_list;
     ss >> base_id;
-    ss >> xpos;
-    ss >> ypos;
+    ss >> x_pos;
+    ss >> y_pos;
     ss >> num_links;
     int i = 0;
     while(i < num_links ){
@@ -56,16 +58,16 @@ int main(int argc, char ** argv){
       i++;
     } 
 
-    BaseStation new_base_station(base_id, xpos, ypos, links_list);
+    BaseStation new_base_station(base_id, x_pos, y_pos, links_list);
 
     base_stations.push_back(new_base_station);
 
-    cout << "Created new base station " + base_id << " with xpos " << xpos << " and ypos " << ypos <<" with " << num_links << "links\n"; 
+    cout << "Created new base station " + base_id << " with xpos " << x_pos << " and ypos " << y_pos<<" with " << num_links << "links\n"; 
   }
 
 
   //create a server
-  struct sockaddr_in address;
+  struct sockaddr_in address, cli;
   int opt = 1;
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if(server_fd == 0){
@@ -95,13 +97,18 @@ int main(int argc, char ** argv){
     exit(EXIT_FAILURE);
   }
 
+  socklen_t len = sizeof(cli);
+  int connfd = accept(server_fd, (struct sockaddr *)&cli, &len);
+  printf("got this far\n");
 
+  // start handling std in
   while(true){
-
     getline(cin, line);
     cout<<line<<endl;
 
-
+    // parse message, get what command it is
+    //
+    // also need to handle network messages from sensors
   }
 
 }

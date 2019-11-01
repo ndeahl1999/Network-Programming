@@ -1,7 +1,12 @@
 #include <iostream>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <stdio.h>
 #include "sensor.h"
+#include <pthread.h>
 
 
 
@@ -23,10 +28,15 @@ void send_message();
 // can take input from std in
 // move [new x pos] [new y pos]
 // senddata [destination id]
+// where [sensorid/baseid]
 // updateposition [sensorid] [sensorrange] [current x] [current y]
 // quit
 void handle_input();
 
+
+// spawn a new thread into this function
+// will keep on doing a `read` call for messages
+void* listen_for(void *args);
 
 
 int main(int argc, char **argv){
@@ -42,6 +52,37 @@ int main(int argc, char **argv){
   Sensor s(sensor_id, sensor_range, initial_x_position, initial_y_position);
 
 
+  pthread_t pid;
+
+  int sock_fd;
+  struct sockaddr_in servaddr;
+  sock_fd= socket(AF_INET, SOCK_STREAM, 0);
+  if(sock_fd== -1){
+    printf("socket creation failed\n");
+    return 0;
+  }
+
+  bzero(&servaddr, sizeof(servaddr));
+
+  servaddr.sin_family = AF_INET;
+  servaddr.sin_addr.s_addr = inet_addr(control_address);
+  servaddr.sin_port = htons(control_port);
+
+  if(connect(sock_fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0){
+
+    printf("failed to connect\n");
+    return 0;
+
+  }
+
+  close(sock_fd);
+
+  void* status;
+
+  pthread_create(&pid, NULL, listen_for, NULL);
+  pthread_join(pid, &status);
+
+
   //connect to control
   
 
@@ -50,7 +91,10 @@ int main(int argc, char **argv){
   // start handling input
   
   handle_input();
+
   
+  
+  printf("finished execution\n");
 
   return 1;
 
@@ -59,7 +103,14 @@ int main(int argc, char **argv){
 
 void handle_input(){
 
+  printf("currently handling input\n");
 
+}
 
+void* listen_for(void *args){
 
+  printf("new thread to listen for connections\n");
+
+  pthread_exit(0);
+  return NULL;
 }
