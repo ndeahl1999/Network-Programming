@@ -1,3 +1,4 @@
+#include <fstream>
 #include <iostream>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -7,7 +8,12 @@
 #include <stdio.h>
 #include "sensor.h"
 #include <pthread.h>
+#include <sstream>
 
+using std::cin;
+using std::cout;
+using std::endl;
+using std::string;
 
 
 
@@ -104,6 +110,36 @@ int main(int argc, char **argv){
 void handle_input(){
 
   printf("currently handling input\n");
+  string line; 
+  while(true){
+
+    getline(cin, line);
+    std::istringstream iss(line);
+    string word;
+    while(iss >> word){
+      if(word == "SENDDATA"){
+        cout<<"we got a send data request"<<endl;
+        // while(iss >> word){
+        //   cout<<"rest of data is "<< word<< endl;
+        // }
+        string dest_id;
+        iss >> dest_id;
+
+        if(dest_id == )
+        // handle rest of send data in here
+      }
+      else if(word == "MOVE"){
+        cout<<"we got a move data request"<<endl;
+        while(iss >> word){
+          cout<<"rest of data is "<< word<< endl;
+        }
+
+      }
+      else if(word == "QUIT"){
+
+      }
+    }
+  }
 
 }
 
