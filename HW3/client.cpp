@@ -31,13 +31,18 @@ void send_message();
 
 
 
+void send_update_position(char* sensor_id, int sensor_range, int x_pos, int y_pos, int sock_fd);
+
+
+
+
 // can take input from std in
 // move [new x pos] [new y pos]
 // senddata [destination id]
 // where [sensorid/baseid]
 // updateposition [sensorid] [sensorrange] [current x] [current y]
 // quit
-void handle_input();
+void handle_input(char* sensor_id);
 
 
 // spawn a new thread into this function
@@ -81,7 +86,14 @@ int main(int argc, char **argv){
 
   }
 
-  close(sock_fd);
+  // TODO
+  // send update position message
+  send_update_position(sensor_id, sensor_range, initial_x_position, initial_y_position, sock_fd);
+
+  // TODO
+  // wait for REACHABLE message
+
+
 
   void* status;
 
@@ -96,26 +108,31 @@ int main(int argc, char **argv){
   
   // start handling input
   
-  handle_input();
+  handle_input(sensor_id);
 
   
   
   printf("finished execution\n");
+  close(sock_fd);
 
   return 1;
 
 }
 
 
-void handle_input(){
+void handle_input(char *sensor_id){
 
   printf("currently handling input\n");
   string line; 
+  string id(sensor_id);
+
+  //loop and keep handling messages
   while(true){
 
     getline(cin, line);
     std::istringstream iss(line);
     string word;
+
     while(iss >> word){
       if(word == "SENDDATA"){
         cout<<"we got a send data request"<<endl;
@@ -125,7 +142,17 @@ void handle_input(){
         string dest_id;
         iss >> dest_id;
 
-        if(dest_id == )
+        //TODO
+        // make sure this check works with string conversion
+        if(id == dest_id){
+          cout<<"matching id"<<endl;
+        }
+
+        // TODO
+        // pass the message to the next on the stop list
+        else{
+
+        }
         // handle rest of send data in here
       }
       else if(word == "MOVE"){
@@ -135,7 +162,9 @@ void handle_input(){
         }
 
       }
+      
       else if(word == "QUIT"){
+        return;
 
       }
     }
@@ -145,8 +174,19 @@ void handle_input(){
 
 void* listen_for(void *args){
 
-  printf("new thread to listen for connections\n");
+
+
 
   pthread_exit(0);
   return NULL;
+}
+
+
+void send_update_position(char* sensor_id, int sensor_range, int x_pos, int y_pos, int sock_fd){
+  string message = "UPDATEPOSITION " + string(sensor_id) + " " + std::to_string(sensor_range) + " " +  std::to_string(x_pos) +
+             " " + std::to_string(y_pos) + " ";
+  // cout<<message<<endl;
+  int bytes = send(sock_fd, message.c_str(),  message.length(), 0);
+
+
 }
