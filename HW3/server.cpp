@@ -54,18 +54,20 @@ void * handle_sensors(void * arg){
 
     if(msg.compare("UPDATEPOSITION")== 0){
       
-      char* ID;
+      char* ID = (char*)malloc(1025 * sizeof(char));
       int range, x_pos, y_pos;
       ss >> ID; 
       ss >> range;
       ss >> x_pos;
       ss >> y_pos;
+      printf("got here\n");
 
 
       Sensor new_sensor(ID, range, x_pos, y_pos, conn_fd);
       sensors.insert(pair<string, Sensor>(string(ID), new_sensor));
+      // printf("got here\n");
       pthread_t tid;
-      pthread_create(&tid, NULL, talk_to_sensor, ID);
+      pthread_create(&tid, NULL, talk_to_sensor, (void*)ID);
 
       
       printf("RECEIVED UPDATE POSITION\n");

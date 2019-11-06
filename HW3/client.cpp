@@ -92,8 +92,14 @@ int main(int argc, char **argv){
 
   char buffer[1025];
   int n = recv(sock_fd, buffer, 1025, 0);
-  buffer[n] = '\0';
-  printf("we got %s", buffer);
+  buffer[n-1] = '\0';
+  printf("we got %s\n", buffer);
+  if(strcmp(buffer, "REACHABLE") != 0){
+
+    printf("didn't receive reachable\n");
+    return 0;
+
+  }
   // TODO
   // wait for REACHABLE message
 
