@@ -90,6 +90,10 @@ int main(int argc, char **argv){
   // send update position message
   send_update_position(sensor_id, sensor_range, initial_x_position, initial_y_position, sock_fd);
 
+  char buffer[1025];
+  int n = recv(sock_fd, buffer, 1025, 0);
+  buffer[n] = '\0';
+  printf("we got %s", buffer);
   // TODO
   // wait for REACHABLE message
 

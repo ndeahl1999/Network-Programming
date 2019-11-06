@@ -27,7 +27,7 @@ std::list<BaseStation> base_stations;
 map<string, Sensor> sensors;
 
 void * handle_sensors(void * arg){
-  int server_fd = (int) arg;
+  int server_fd = (*(int*) arg);
   char buffer[1025];
   while(true){
     struct sockaddr_in cli;
@@ -42,6 +42,8 @@ void * handle_sensors(void * arg){
     ss >> msg;
 
     if(msg.compare("UPDATEPOSITION")== 0){
+      string reachable = "REACHABLE\n";
+      send(connfd, reachable.c_str(), reachable.length(),0);
       printf("RECEIVED UPDATE POSITION\n");
     }else{
 
@@ -134,7 +136,6 @@ int main(int argc, char ** argv){
 
 
   //Wait for input from stdin
-  string line;
   while(true){
     getline(cin, line);
   }
