@@ -32,9 +32,9 @@ void * handle_sensors(void * arg){
   while(true){
     struct sockaddr_in cli;
     socklen_t len = sizeof(cli);
-    int connfd = accept(server_fd, (struct sockaddr *)&cli, &len);
+    int conn_fd = accept(server_fd, (struct sockaddr *)&cli, &len);
 
-    int n = recv(connfd, buffer, sizeof(buffer), 0);
+    int n = recv(conn_fd, buffer, sizeof(buffer), 0);
 
     string sensor_msg(buffer);
     std::istringstream ss(sensor_msg);
@@ -43,7 +43,18 @@ void * handle_sensors(void * arg){
 
     if(msg.compare("UPDATEPOSITION")== 0){
       string reachable = "REACHABLE\n";
-      send(connfd, reachable.c_str(), reachable.length(),0);
+      char* ID;
+      int range, x_pos, y_pos;
+      ss >> ID; 
+      ss >> range;
+      ss >> x_pos;
+      ss >> y_pos;
+
+
+      Sensor new_sensor(ID, range, x_pos, y_pos, conn_fd);
+      sensors.insert(pair<string, Sensor>(string(ID), new_sensor));
+
+      send(conn_fd, reachable.c_str(), reachable.length(),0);
       printf("RECEIVED UPDATE POSITION\n");
     }else{
 
