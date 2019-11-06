@@ -26,6 +26,8 @@ using std::string;
 std::list<BaseStation> base_stations;
 map<string, Sensor> sensors;
 
+
+// this  talks to a specific sensor
 void * talk_to_sensor(void* arg){
   char*ID = (char *) arg;
   printf("Created new thread for sensor %s\n", ID);
@@ -34,12 +36,24 @@ void * talk_to_sensor(void* arg){
   int conn_fd = s.conn_fd;
   string reachable = "REACHABLE\n";
   send(conn_fd, reachable.c_str(), reachable.length(),0);
+
+  int n;
+  char buffer[1025];
+  
+  while(true){
+    bzero(&buffer, 1025);
+    n = recv(conn_fd, buffer, 1025, 0);
+    printf("we got %s\n", buffer);
+  }
   
 }
 
+// this waits for incoming connections
 void * handle_sensors(void * arg){
   int server_fd = (*(int*) arg);
   char buffer[1025];
+
+  
   while(true){
     struct sockaddr_in cli;
     socklen_t len = sizeof(cli);

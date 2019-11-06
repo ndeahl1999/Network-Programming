@@ -42,7 +42,7 @@ void send_update_position(char* sensor_id, int sensor_range, int x_pos, int y_po
 // where [sensorid/baseid]
 // updateposition [sensorid] [sensorrange] [current x] [current y]
 // quit
-void handle_input(char* sensor_id);
+void handle_input(char* sensor_id, int sock_fd);
 
 
 // spawn a new thread into this function
@@ -118,7 +118,7 @@ int main(int argc, char **argv){
   
   // start handling input
   
-  handle_input(sensor_id);
+  handle_input(sensor_id, sock_fd);
 
   
   
@@ -130,7 +130,7 @@ int main(int argc, char **argv){
 }
 
 
-void handle_input(char *sensor_id){
+void handle_input(char *sensor_id, int sock_fd){
 
   printf("currently handling input\n");
   string line; 
@@ -140,6 +140,8 @@ void handle_input(char *sensor_id){
   while(true){
 
     getline(cin, line);
+    send(sock_fd, line.c_str(), line.length(),0);
+  
     std::istringstream iss(line);
     string word;
 
