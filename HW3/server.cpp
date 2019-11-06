@@ -11,8 +11,10 @@
 #include <unistd.h>
 #include <list>
 #include <sstream>
+#include <pthread.h>
+#include <map>
 #include "base_station.h"
-
+#include "sensor.h"
 using std::cout;
 using std::endl;
 using std::string;
@@ -20,7 +22,33 @@ using std::string;
 
 // holds list of all base stations attached
 std::list<BaseStation> base_stations;
+map<string, Sensor> sensors;
 
+void * handle_sensors(void * arg){
+  int server_fd = (int) arg;
+  char buffer[1025];
+  while(true){
+    struct sockaddr_in cli;
+    socklen_t len = sizeof(cli);
+    int connfd = accept(server_fd, (struct sockaddr *)&cli, &len);
+
+    int n = recv(connfd, buffer, sizeof(buffer), 0);
+
+    string sensor_msg(buffer);
+    std::istringstream ss(sensor_msg);
+    string msg;
+    ss >> msg;
+
+    if(msg.compare("UPDATEPOSITION")== 0){
+      printf("RECEIVED UPDATE POSITION\n");
+    }else{
+
+    }
+
+    
+
+  }
+} 
 
 
 int main(int argc, char ** argv){
@@ -62,12 +90,12 @@ int main(int argc, char ** argv){
 
     base_stations.push_back(new_base_station);
 
-    cout << "Created new base station " + base_id << " with xpos " << x_pos << " and ypos " << y_pos<<" with " << num_links << "links\n"; 
+    cout << "Created new base station " + base_id << " with xpos " << x_pos << " and ypos " << y_pos<<" with " << num_links << " link(s)\n"; 
   }
 
 
   //create a server
-  struct sockaddr_in address, cli;
+  struct sockaddr_in address;
   int opt = 1;
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if(server_fd == 0){
@@ -97,18 +125,17 @@ int main(int argc, char ** argv){
     exit(EXIT_FAILURE);
   }
 
-  socklen_t len = sizeof(cli);
-  int connfd = accept(server_fd, (struct sockaddr *)&cli, &len);
-  printf("got this far\n");
 
-  // start handling std in
+  //create thread to handle incoming connections from sensors
+  pthread_t tid;
+  pthread_create(&tid, NULL, handle_sensors, &server_fd);
+
+
+  //Wait for input from stdin
+  string line;
   while(true){
     getline(cin, line);
-    cout<<line<<endl;
-
-    // parse message, get what command it is
-    //
-    // also need to handle network messages from sensors
   }
+  
 
 }
