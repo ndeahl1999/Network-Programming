@@ -14,7 +14,12 @@
 #include <pthread.h>
 #include <map>
 #include "base_station.h"
+<<<<<<< HEAD
 #include "sensor.h"
+=======
+
+using std::cin;
+>>>>>>> 9858aaa4cf18c75e3311020d6cd4d54210448e4c
 using std::cout;
 using std::endl;
 using std::string;
