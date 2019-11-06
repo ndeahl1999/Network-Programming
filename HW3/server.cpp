@@ -26,6 +26,17 @@ using std::string;
 std::list<BaseStation> base_stations;
 map<string, Sensor> sensors;
 
+void * talk_to_sensor(void* arg){
+  char*ID = (char *) arg;
+  printf("Created new thread for sensor %s\n", ID);
+
+  Sensor s = sensors.find(string(ID))->second;
+  int conn_fd = s.conn_fd;
+  string reachable = "REACHABLE\n";
+  send(conn_fd, reachable.c_str(), reachable.length(),0);
+  
+}
+
 void * handle_sensors(void * arg){
   int server_fd = (*(int*) arg);
   char buffer[1025];
@@ -42,7 +53,7 @@ void * handle_sensors(void * arg){
     ss >> msg;
 
     if(msg.compare("UPDATEPOSITION")== 0){
-      string reachable = "REACHABLE\n";
+      
       char* ID;
       int range, x_pos, y_pos;
       ss >> ID; 
@@ -53,8 +64,10 @@ void * handle_sensors(void * arg){
 
       Sensor new_sensor(ID, range, x_pos, y_pos, conn_fd);
       sensors.insert(pair<string, Sensor>(string(ID), new_sensor));
+      pthread_t tid;
+      pthread_create(&tid, NULL, talk_to_sensor, ID);
 
-      send(conn_fd, reachable.c_str(), reachable.length(),0);
+      
       printf("RECEIVED UPDATE POSITION\n");
     }else{
 
