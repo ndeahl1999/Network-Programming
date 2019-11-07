@@ -12,6 +12,7 @@
 #include <pthread.h>
 #include <sstream>
 #include <strings.h>
+#include <netdb.h>
 
 using std::cin;
 using std::cout;
@@ -77,11 +78,22 @@ int main(int argc, char **argv){
 
   bzero(&servaddr, sizeof(servaddr));
 
+  struct addrinfo hints, *infoptr;
+
+  hints.ai_family = AF_INET;
+  int result = getaddrinfo(control_address, NULL, &hints, &infoptr);
+  
+  struct addrinfo *p = infoptr->ai_next; 
+  char host[256];
+  getnameinfo(p->ai_addr, p->ai_addrlen, host, sizeof (host), NULL, 0, NI_NUMERICHOST);
+  printf("HOST NAME IS %s\n", host);
+
+
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = inet_addr(control_address);
   servaddr.sin_port = htons(control_port);
 
-  if(connect(sock_fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0){
+  if(connect(sock_fd, (struct sockaddr*)&servaddr, sizeof(host)) != 0){
 
     printf("failed to connect\n");
     return 0;
