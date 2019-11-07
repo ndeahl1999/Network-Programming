@@ -105,13 +105,26 @@ void * talk_to_sensor(void* arg){
 
       // TODO
       // handle these
-      string hop_length;
+      int hop_length;
       vector<string> hop_list;
 
       iss >> origin_id >> next_id >> dest_id;
       if(next_id == dest_id){
-        printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
+        printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), next_id.c_str(), origin_id.c_str());
+
+      }else{
+        iss>>hop_length;
+        int i = 0;
+        //read string for each hop already done. 
+        while(i < hop_length){
+          string hop;
+          iss >> hop;
+          hop_list.push_back(hop);
+          i++;
+        }
       }
+  
+
 
 
     }
@@ -192,6 +205,17 @@ void * handle_sensors(void * arg){
   }
 } 
 
+
+void close_server(){
+
+  map<string, Sensor>::iterator itr = sensors.begin();
+  while(itr != sensors.end()){
+    close(itr->second.conn_fd);
+    itr++;
+  }
+  
+  exit(0);
+}
 
 int main(int argc, char ** argv){
   if(argc != 3){
@@ -280,7 +304,7 @@ int main(int argc, char ** argv){
     string word;
     iss>>word;
     if(word == "QUIT"){
-      exit(0);
+      close_server();
     }
   }
   
