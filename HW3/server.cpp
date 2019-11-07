@@ -35,25 +35,26 @@ bool in_range(int station_x, int station_y, int sensor_x, int sensor_y, int max_
   return true;
 }
 
+
+
 // holds list of all base stations attached
 std::list<BaseStation> base_stations;
 map<string, Sensor> sensors;
 
 
-// this  talks to a specific sensor
-void * talk_to_sensor(void* arg){
-  char*ID = (char *) arg;
-  // printf("Created new thread for sensor %s\n", ID);
 
-  Sensor s = sensors.find(string(ID))->second;
-  int conn_fd = s.conn_fd;
+// TODO
+// pull out logic of getting reachable nodes
+string get_reachable_message(int a_x, int a_y, int range){
   string reachable = "REACHABLE ";
 
-  // append all the base stations to reachable
+// append all the base stations to reachable
+  // TODO
+  // pull this out into own method, used a lot
   int counter=0;
   string reachable_list = "";
   for(BaseStation b : base_stations){
-    if(in_range(b.getX(), b.getY(), s.x_pos, s.y_pos, s.range)){
+    if(in_range(b.getX(), b.getY(), a_x, a_y, range)){
       // its in range
       // printf("this base station is in range\n");
       // printf("%s %d %d\n", b.getID().c_str(), b.getX(), b.getY());
@@ -69,6 +70,20 @@ void * talk_to_sensor(void* arg){
   reachable+=to_string(counter);
   reachable+=" ";
   reachable+=reachable_list;
+
+
+  return reachable;
+
+
+}
+// this  talks to a specific sensor
+void * talk_to_sensor(void* arg){
+  char*ID = (char *) arg;
+  // printf("Created new thread for sensor %s\n", ID);
+
+  Sensor s = sensors.find(string(ID))->second;
+  int conn_fd = s.conn_fd;
+  string reachable = get_reachable_message(s.x_pos, s.y_pos, s.range);
 
 
   send(conn_fd, reachable.c_str(), reachable.length(),0);
@@ -95,12 +110,36 @@ void * talk_to_sensor(void* arg){
 
       iss >> origin_id >> next_id >> dest_id;
       if(next_id == dest_id){
-        printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), next_id.c_str(), origin_id.c_str());
-
+        printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
       }
 
 
     }
+      else if(word == "UPDATEPOSITION"){
+        char * sensor_id = (char*) malloc(1025);
+        int range;
+        int x_pos;
+        int y_pos;
+        iss >> sensor_id >> range >> x_pos >> y_pos;
+
+        // printf("got %d %d\n", x_pos, y_pos);
+        Sensor sen(sensor_id, range, x_pos, y_pos, conn_fd);
+
+        // updating the map entry with a new Sensor
+        sensors[string(sensor_id)] = sen;
+
+        string reachable = get_reachable_message(x_pos, y_pos, range);
+
+
+        send(conn_fd, reachable.c_str(), reachable.length()-1,0);
+        
+
+
+        // TODO
+        // get list of in reach nodes
+        // send it to client
+
+      }
     if(n <= 0){
       return NULL;
     }

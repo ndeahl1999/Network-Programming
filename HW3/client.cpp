@@ -85,9 +85,7 @@ int main(int argc, char **argv){
   host_entry = gethostbyname(control_address);
 
   char* host;
-  printf("got here\n");
   host = inet_ntoa(*((struct in_addr*)host_entry->h_addr_list[0]));
-  printf("%s\n", host);
 
 
   servaddr.sin_family = AF_INET;
@@ -135,7 +133,7 @@ int main(int argc, char **argv){
     SensorBaseStation temp(id, x, y);
 
     // add it to the sensor
-    s.in_reach.insert(temp);
+    s.add_in_reach(temp);
   }
   // DEBUG TO SEE CONTENTS OF in_reach
   // for(std::set<SensorBaseStation>::iterator it = in_reach.begin(); it != in_reach.end(); it++){
@@ -190,35 +188,100 @@ void handle_input(char *sensor_id,  int sock_fd){
         // string message  = "DATAMESSAGE " + string(sensor_id) + " " + 
 
 
+        // MAJOR TODO
+
+        // send a where 
+
+        // get a there back
+
+        // use those coordinates as the comparison to get the in reach base station
 
         //TODO
         // make sure this check works with string conversion
         // this shouldn't go here
         // this check should go in handle_message that is sent from control
         if(id == dest_id){
-          cout<<"matching id"<<endl;
+          printf("%s: Message from %s to %s successfully received.\n ", sensor_id, dest_id.c_str(), sensor_id);
         }
 
+        
 
         // TODO
         // pass the message to the next on the stop list
         else{
-
+          bool found = false;
+          double min_dist=1000000;
+          const SensorBaseStation * closest;
           for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
+
             if(it->getID() == dest_id){
               string data_message = "DATAMESSAGE " + string(s.id) + " " + dest_id + " "+ dest_id + " " + to_string(0) + " ";
-              printf("%s: Sent a new message bound for %s\n", s.id, it->getID().c_str());
+              printf("%s: Sent a new message bound for %s.\n", s.id, it->getID().c_str());
               send(sock_fd, data_message.c_str(), data_message.length(),0);
+              
+              found = true;
             }
           }
+          if(found == true){
+            continue;
+          }
+
+          // EVERYTHING TODO
+          for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
+            // printf("looking at %s with a distance of %f\n", it->getID().c_str(), it->getDist());
+            if(it->getDist() < min_dist){
+              closest = &(*it);
+              min_dist = closest->getDist();
+            }
+          }
+          string data_message = "DATAMESSAGE " + string(s.id) + " " + dest_id + " "+ dest_id + " " + to_string(0) + " ";
+              printf("%s: Sent a new message bound for %s.\n", s.id, closest->getID().c_str());
+              send(sock_fd, data_message.c_str(), data_message.length(),0);
         }
         // handle rest of send data in here
       }
       else if(word == "MOVE"){
-        cout<<"we got a move data request"<<endl;
-        while(iss >> word){
-          cout<<"rest of data is "<< word<< endl;
+        int new_x;
+        int new_y;
+        iss >> new_x >> new_y;
+
+        // set the new coordinates
+        s.x_pos = new_x;
+        s.y_pos = new_y;
+
+        // send an update position command to the server
+        send_update_position(sensor_id, s.range, s.x_pos, s.y_pos, sock_fd);
+
+        // receive new list of reachable
+        char buffer[1025];
+        bzero(&buffer, 1025);
+        int n = recv(sock_fd, buffer, 1025, 0);
+
+        std::istringstream iss(buffer);
+        string word;
+        iss >> word;
+        if(word != "REACHABLE"){
+          perror("sux");
+          return;
         }
+
+        s.in_reach = std::set<SensorBaseStation>();
+        // get number of reachable
+        int num_reachable;
+        iss >> num_reachable;
+        for(int i=0;i<num_reachable;i++){
+
+          // add each to the map
+          string id;
+          int x;
+          int y;
+          iss >> id >> x >> y;
+          SensorBaseStation temp(id, x, y);
+
+          // add it to the sensor
+          s.add_in_reach(temp);
+        }
+
 
       }
       

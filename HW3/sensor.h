@@ -45,8 +45,11 @@ Sensor::Sensor(char* id_, int range_, int x_pos_, int y_pos_, int conn_fd_){
 
 void Sensor::add_in_reach(SensorBaseStation station){
 
-  double distance = sqrt( pow(this->x_pos - station.getX(), 2) + pow(this->y_pos - station.getY(), 2));
+  // printf("coords of station %s is %d %d\n", station.getID().c_str(), station.getX(), station.getY());
+  // printf("the positions in question are %f %f\n ", pow(this->x_pos-station.getX(),2), pow(this->y_pos-station.getY(),2));
+  double distance = sqrt( pow( station.getX() - this->x_pos, 2) + pow(station.getY() - this->y_pos, 2));
 
+  // printf("the distance is %f\n",distance);
   station.setDist(distance);
   in_reach.insert(station);  
   // TODO
