@@ -51,7 +51,6 @@ void handle_input(char* sensor_id, int sock_fd);
 // will keep on doing a `read` call for messages
 void* listen_for(void *args);
 
-std::set<SensorBaseStation> in_reach;
 int main(int argc, char **argv){
 
 
@@ -63,7 +62,6 @@ int main(int argc, char **argv){
   int initial_y_position = atoi(argv[6]);
 
   Sensor s(sensor_id, sensor_range, initial_x_position, initial_y_position);
-
 
   pthread_t pid;
 
@@ -95,7 +93,6 @@ int main(int argc, char **argv){
   char buffer[1025];
   int n = recv(sock_fd, buffer, 1025, 0);
   buffer[n-1] = '\0';
-  printf("we got %s\n", buffer);
 
   // format of message
   // REACHABLE <NUM> <LIST OF REACHABLE>
@@ -121,33 +118,22 @@ int main(int argc, char **argv){
     int y;
     iss >> id >> x >> y;
     SensorBaseStation temp(id, x, y);
-
-    in_reach.insert(temp);
-
+    s.in_reach.insert(temp);
   }
   // DEBUG TO SEE CONTENTS OF in_reach
   // for(std::set<SensorBaseStation>::iterator it = in_reach.begin(); it != in_reach.end(); it++){
   //   cout<<it->getID() << " "<< it->getX()<<" " << it->getY()<<endl;
   // }
   
-  // TODO
-  // wait for REACHABLE message
-
-
 
   void* status;
 
+  // create a thread to listen for messages 
   pthread_create(&pid, NULL, listen_for, NULL);
   pthread_join(pid, &status);
 
-
-  //connect to control
   
-
-  // send an updateposition message
-  
-  // start handling input
-  
+  // main thread will start handling input  
   handle_input(sensor_id, sock_fd);
 
   
@@ -182,7 +168,7 @@ void handle_input(char *sensor_id,  int sock_fd){
         string dest_id;
         iss >> dest_id;
 
-        printf("%s: %s %s\n", sensor_id, word.c_str(), dest_id.c_str());
+        // printf("%s: %s %s\n", sensor_id, word.c_str(), dest_id.c_str());
         // string message  = "DATAMESSAGE " + string(sensor_id) + " " + 
 
 

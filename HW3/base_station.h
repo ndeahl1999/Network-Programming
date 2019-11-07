@@ -36,12 +36,18 @@ class SensorBaseStation{
     string base_id;
     int xpos;
     int ypos;
+    double distance_from;
 
   public:
     SensorBaseStation(string base_id, int xpos, int ypos);
-    const string getID() const { return base_id;}
-    const int getX() const { return xpos;}
-    const int getY() const { return ypos;}
+
+    const string getID() const { return base_id; }
+    const int getX() const { return xpos; }
+    const int getY() const { return ypos; }
+    const double getDist() const { return distance_from; }
+
+    void setDist(double distance) { this->distance_from = distance;}
+
     bool operator< (const SensorBaseStation & station) const {
       if(this->getID().compare(station.getID()) < 0){
         return true;
@@ -56,6 +62,7 @@ SensorBaseStation::SensorBaseStation(string base_id, int xpos, int ypos){
   this->base_id = base_id;
   this->xpos = xpos;
   this->ypos = ypos;
+  this->distance_from = 100;
 }
 
 
