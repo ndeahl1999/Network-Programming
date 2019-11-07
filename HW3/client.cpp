@@ -1,12 +1,14 @@
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>
+#include <set>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <stdio.h>
 #include "sensor.h"
+#include "base_station.h"
 #include <pthread.h>
 #include <sstream>
 
@@ -49,7 +51,7 @@ void handle_input(char* sensor_id, int sock_fd);
 // will keep on doing a `read` call for messages
 void* listen_for(void *args);
 
-
+std::set<SensorBaseStation> in_reach;
 int main(int argc, char **argv){
 
 
@@ -94,12 +96,40 @@ int main(int argc, char **argv){
   int n = recv(sock_fd, buffer, 1025, 0);
   buffer[n-1] = '\0';
   printf("we got %s\n", buffer);
-  if(strcmp(buffer, "REACHABLE") != 0){
 
+  // format of message
+  // REACHABLE <NUM> <LIST OF REACHABLE>
+  string reachable = string(buffer);
+  std::istringstream iss(buffer);
+  string word;
+  iss >> word;
+
+  // make sure received reachable
+  if(word.compare("REACHABLE") != 0 ){
     printf("didn't receive reachable\n");
     return 0;
+  }
+
+  // get number of reachable
+  int num_reachable;
+  iss >> num_reachable;
+  for(int i=0;i<num_reachable;i++){
+
+    // add each to the map
+    string id;
+    int x;
+    int y;
+    iss >> id >> x >> y;
+    SensorBaseStation temp(id, x, y);
+
+    in_reach.insert(temp);
 
   }
+  // DEBUG TO SEE CONTENTS OF in_reach
+  // for(std::set<SensorBaseStation>::iterator it = in_reach.begin(); it != in_reach.end(); it++){
+  //   cout<<it->getID() << " "<< it->getX()<<" " << it->getY()<<endl;
+  // }
+  
   // TODO
   // wait for REACHABLE message
 
@@ -130,7 +160,7 @@ int main(int argc, char **argv){
 }
 
 
-void handle_input(char *sensor_id, int sock_fd){
+void handle_input(char *sensor_id,  int sock_fd){
 
   printf("currently handling input\n");
   string line; 
@@ -140,24 +170,29 @@ void handle_input(char *sensor_id, int sock_fd){
   while(true){
 
     getline(cin, line);
-    send(sock_fd, line.c_str(), line.length(),0);
+    // temporary debug to make sure the server can get the message
+    // send(sock_fd, line.c_str(), line.length(),0);
   
     std::istringstream iss(line);
     string word;
 
     while(iss >> word){
       if(word == "SENDDATA"){
-        cout<<"we got a send data request"<<endl;
-        // while(iss >> word){
-        //   cout<<"rest of data is "<< word<< endl;
-        // }
+
         string dest_id;
         iss >> dest_id;
 
+        printf("%s: %s %s\n", sensor_id, word.c_str(), dest_id.c_str());
+        // string message  = "DATAMESSAGE " + string(sensor_id) + " " + 
+
+
+
         //TODO
         // make sure this check works with string conversion
+        // this shouldn't go here
+        // this check should go in handle_message that is sent from control
         if(id == dest_id){
-          cout<<"matching id"<<endl;
+          // cout<<"matching id"<<endl;
         }
 
         // TODO

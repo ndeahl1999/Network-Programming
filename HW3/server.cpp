@@ -13,6 +13,7 @@
 #include <sstream>
 #include <pthread.h>
 #include <map>
+#include <cmath>
 #include "base_station.h"
 #include "sensor.h"
 
@@ -22,6 +23,18 @@ using std::endl;
 using std::string;
 
 
+bool in_range(int station_x, int station_y, int sensor_x, int sensor_y, int max_dist){
+
+  double distance = sqrt( pow(station_x - sensor_x, 2) + pow(station_y - sensor_y, 2));
+  if(distance > max_dist){
+    return false;
+  }
+  // use distance formula  here
+
+  // return whether or not control can reach sensor
+  return true;
+}
+
 // holds list of all base stations attached
 std::list<BaseStation> base_stations;
 map<string, Sensor> sensors;
@@ -30,11 +43,36 @@ map<string, Sensor> sensors;
 // this  talks to a specific sensor
 void * talk_to_sensor(void* arg){
   char*ID = (char *) arg;
-  printf("Created new thread for sensor %s\n", ID);
+  // printf("Created new thread for sensor %s\n", ID);
 
   Sensor s = sensors.find(string(ID))->second;
   int conn_fd = s.conn_fd;
-  string reachable = "REACHABLE\n";
+  string reachable = "REACHABLE ";
+
+  // append all the base stations to reachable
+  int counter=0;
+  string reachable_list = "";
+  for(BaseStation b : base_stations){
+    if(in_range(b.getX(), b.getY(), s.x_pos, s.y_pos, s.range)){
+      // its in range
+      printf("this base station is in range\n");
+      printf("%s %d %d\n", b.getID().c_str(), b.getX(), b.getY());
+      reachable_list+=b.getID();
+      reachable_list+= " ";
+      reachable_list+=to_string(b.getX());
+      reachable_list+= " ";
+      reachable_list+=to_string(b.getY());
+      reachable_list+= " ";
+      counter++;
+    }
+  }
+  printf("got past here\n");
+  reachable+=to_string(counter);
+  reachable+=" ";
+  reachable+=reachable_list;
+
+  printf("the string is--- %s\n", reachable.c_str());
+
   send(conn_fd, reachable.c_str(), reachable.length(),0);
 
   int n;
@@ -74,7 +112,6 @@ void * handle_sensors(void * arg){
       ss >> range;
       ss >> x_pos;
       ss >> y_pos;
-      printf("got here\n");
 
 
       Sensor new_sensor(ID, range, x_pos, y_pos, conn_fd);
@@ -84,7 +121,7 @@ void * handle_sensors(void * arg){
       pthread_create(&tid, NULL, talk_to_sensor, (void*)ID);
 
       
-      printf("RECEIVED UPDATE POSITION\n");
+      // printf("RECEIVED UPDATE POSITION\n");
     }else{
 
     }
@@ -113,7 +150,7 @@ int main(int argc, char ** argv){
     // streamify a single line
     std::istringstream ss(line);
 
-    cout<<line<<endl;
+    // cout<<line<<endl;
 
     // read in contents of a line into proper variables
     string temp, base_id;
@@ -134,7 +171,7 @@ int main(int argc, char ** argv){
 
     base_stations.push_back(new_base_station);
 
-    cout << "Created new base station " + base_id << " with xpos " << x_pos << " and ypos " << y_pos<<" with " << num_links << " link(s)\n"; 
+    // cout << "Created new base station " + base_id << " with xpos " << x_pos << " and ypos " << y_pos<<" with " << num_links << " link(s)\n"; 
   }
 
 
