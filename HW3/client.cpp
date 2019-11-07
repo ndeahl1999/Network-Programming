@@ -11,6 +11,7 @@
 #include "base_station.h"
 #include <pthread.h>
 #include <sstream>
+#include <strings.h>
 
 using std::cin;
 using std::cout;
