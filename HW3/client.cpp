@@ -57,6 +57,9 @@ Sensor s;
 int main(int argc, char **argv){
 
 
+  setvbuf( stdout, NULL, _IONBF, 0 );
+
+
   char* control_address = argv[1];
   int control_port = atoi(argv[2]);
   char* sensor_id = argv[3];
@@ -78,22 +81,20 @@ int main(int argc, char **argv){
 
   bzero(&servaddr, sizeof(servaddr));
 
-  struct addrinfo hints, *infoptr;
+  struct hostent *host_entry;
+  host_entry = gethostbyname(control_address);
 
-  hints.ai_family = AF_INET;
-  int result = getaddrinfo(control_address, NULL, &hints, &infoptr);
-  
-  struct addrinfo *p = infoptr->ai_next; 
-  char host[256];
-  getnameinfo(p->ai_addr, p->ai_addrlen, host, sizeof (host), NULL, 0, NI_NUMERICHOST);
-  printf("HOST NAME IS %s\n", host);
+  char* host;
+  printf("got here\n");
+  host = inet_ntoa(*((struct in_addr*)host_entry->h_addr_list[0]));
+  printf("%s\n", host);
 
 
   servaddr.sin_family = AF_INET;
-  servaddr.sin_addr.s_addr = inet_addr(control_address);
+  servaddr.sin_addr.s_addr = inet_addr(host);
   servaddr.sin_port = htons(control_port);
 
-  if(connect(sock_fd, (struct sockaddr*)&servaddr, sizeof(host)) != 0){
+  if(connect(sock_fd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0){
 
     printf("failed to connect\n");
     return 0;
