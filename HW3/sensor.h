@@ -1,5 +1,5 @@
 #include <set>
-#include <base_station.h>
+#include "base_station.h"
 #include <cmath>
 
 class Sensor{
@@ -7,6 +7,7 @@ class Sensor{
 
   public:
 
+    Sensor();
     Sensor(char* id_, int range_, int x_pos_, int y_pos_);
     ~Sensor();
     Sensor(char* id_, int range_, int x_pos_, int y_pos_, int conn_fd_);
@@ -22,6 +23,10 @@ class Sensor{
 
 };
 
+// this should only be used at the beginnig but be reassinged 
+Sensor::Sensor(){
+
+}
 Sensor::Sensor(char* id_, int range_, int x_pos_, int y_pos_){
   id = id_;
   range = range_;

@@ -50,6 +50,7 @@ void handle_input(char* sensor_id, int sock_fd);
 // spawn a new thread into this function
 // will keep on doing a `read` call for messages
 void* listen_for(void *args);
+Sensor s;
 
 int main(int argc, char **argv){
 
@@ -61,7 +62,7 @@ int main(int argc, char **argv){
   int initial_x_position = atoi(argv[5]);
   int initial_y_position = atoi(argv[6]);
 
-  Sensor s(sensor_id, sensor_range, initial_x_position, initial_y_position);
+  s = Sensor(sensor_id, sensor_range, initial_x_position, initial_y_position);
 
   pthread_t pid;
 
@@ -118,6 +119,8 @@ int main(int argc, char **argv){
     int y;
     iss >> id >> x >> y;
     SensorBaseStation temp(id, x, y);
+
+    // add it to the sensor
     s.in_reach.insert(temp);
   }
   // DEBUG TO SEE CONTENTS OF in_reach
@@ -148,7 +151,7 @@ int main(int argc, char **argv){
 
 void handle_input(char *sensor_id,  int sock_fd){
 
-  printf("currently handling input\n");
+  // printf("currently handling input\n");
   string line; 
   string id(sensor_id);
 
@@ -164,6 +167,7 @@ void handle_input(char *sensor_id,  int sock_fd){
 
     while(iss >> word){
       if(word == "SENDDATA"){
+        // cout<<"we are sending"<<endl;
 
         string dest_id;
         iss >> dest_id;
@@ -178,13 +182,21 @@ void handle_input(char *sensor_id,  int sock_fd){
         // this shouldn't go here
         // this check should go in handle_message that is sent from control
         if(id == dest_id){
-          // cout<<"matching id"<<endl;
+          cout<<"matching id"<<endl;
         }
+
 
         // TODO
         // pass the message to the next on the stop list
         else{
 
+          for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
+            if(it->getID() == dest_id){
+              string data_message = "DATAMESSAGE " + string(s.id) + " " + dest_id + " "+ dest_id + " " + to_string(0) + " ";
+              printf("%s: Sent a new message bound for %s\n", s.id, it->getID().c_str());
+              send(sock_fd, data_message.c_str(), data_message.length(),0);
+            }
+          }
         }
         // handle rest of send data in here
       }
@@ -197,7 +209,7 @@ void handle_input(char *sensor_id,  int sock_fd){
       }
       
       else if(word == "QUIT"){
-        return;
+        exit(0);
 
       }
     }

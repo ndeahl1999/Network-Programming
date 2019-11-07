@@ -55,8 +55,8 @@ void * talk_to_sensor(void* arg){
   for(BaseStation b : base_stations){
     if(in_range(b.getX(), b.getY(), s.x_pos, s.y_pos, s.range)){
       // its in range
-      printf("this base station is in range\n");
-      printf("%s %d %d\n", b.getID().c_str(), b.getX(), b.getY());
+      // printf("this base station is in range\n");
+      // printf("%s %d %d\n", b.getID().c_str(), b.getX(), b.getY());
       reachable_list+=b.getID();
       reachable_list+= " ";
       reachable_list+=to_string(b.getX());
@@ -66,12 +66,10 @@ void * talk_to_sensor(void* arg){
       counter++;
     }
   }
-  printf("got past here\n");
   reachable+=to_string(counter);
   reachable+=" ";
   reachable+=reachable_list;
 
-  printf("the string is--- %s\n", reachable.c_str());
 
   send(conn_fd, reachable.c_str(), reachable.length(),0);
 
@@ -81,7 +79,31 @@ void * talk_to_sensor(void* arg){
   while(true){
     bzero(&buffer, 1025);
     n = recv(conn_fd, buffer, 1025, 0);
-    printf("we got %s\n", buffer);
+    string message = string(buffer);
+    std::istringstream iss(message);
+    string word;
+    iss >> word;
+    if(word == "DATAMESSAGE"){
+      string origin_id;
+      string next_id;
+      string dest_id;
+
+      // TODO
+      // handle these
+      string hop_length;
+      vector<string> hop_list;
+
+      iss >> origin_id >> next_id >> dest_id;
+      if(next_id == dest_id){
+        printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), next_id.c_str(), origin_id.c_str());
+
+      }
+
+
+    }
+    if(n <= 0){
+      return NULL;
+    }
   }
   
 }
@@ -215,6 +237,12 @@ int main(int argc, char ** argv){
   //Wait for input from stdin
   while(true){
     getline(cin, line);
+    std::istringstream iss(line);
+    string word;
+    iss>>word;
+    if(word == "QUIT"){
+      exit(0);
+    }
   }
   
 
