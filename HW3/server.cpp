@@ -43,15 +43,9 @@ std::set<string> base_station_names;
 map<string, Sensor> sensors;
 
 
-
-// TODO
-// pull out logic of getting reachable nodes
 string get_reachable_message(int a_x, int a_y, int range){
   string reachable = "REACHABLE ";
-
-// append all the base stations to reachable
-  // TODO
-  // pull this out into own method, used a lot
+  // append all the base stations to reachable
   int counter=0;
   string reachable_list = "";
   for(BaseStation b : base_stations){
@@ -110,9 +104,10 @@ void * talk_to_sensor(void* arg){
       std::set<string> hop_list;
 
       iss >> origin_id >> next_id >> dest_id;
+      //if the message has reached its destintation
       if(next_id == dest_id){
-        printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), origin_id.c_str(), next_id.c_str());
-
+        //message has reached is destination succesfully
+        printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), origin_id.c_str(), next_id.c_str());  
       }else{
         iss>>hop_length;
         int i = 0;
@@ -123,7 +118,11 @@ void * talk_to_sensor(void* arg){
           hop_list.insert(hop);
           i++;
         }
-        // printf("this means it needs to hop\n");
+        //add string for hop to current base station 
+        printf("%s: Message from %s to %s being forwarded through %s\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
+        
+
+        
       }
     }
     else if(word == "WHERE"){
