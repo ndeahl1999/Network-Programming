@@ -118,9 +118,10 @@ void * talk_to_sensor(void* arg){
           hop_list.insert(hop);
           i++;
         }
+        hop_list.insert(next_id);
         //add string for hop to current base station 
         printf("%s: Message from %s to %s being forwarded through %s\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
-        
+
 
         
       }
