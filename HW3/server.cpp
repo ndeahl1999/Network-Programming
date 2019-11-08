@@ -107,11 +107,11 @@ void * talk_to_sensor(void* arg){
       // TODO
       // handle these
       int hop_length;
-      vector<string> hop_list;
+      std::set<string> hop_list;
 
       iss >> origin_id >> next_id >> dest_id;
       if(next_id == dest_id){
-        printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), next_id.c_str(), origin_id.c_str());
+        printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), origin_id.c_str(), next_id.c_str());
 
       }else{
         iss>>hop_length;
@@ -120,16 +120,17 @@ void * talk_to_sensor(void* arg){
         while(i < hop_length){
           string hop;
           iss >> hop;
-          hop_list.push_back(hop);
+          hop_list.insert(hop);
           i++;
         }
+        // printf("this means it needs to hop\n");
       }
     }
     else if(word == "WHERE"){
       string target;
       iss >> target;
       if(base_station_names.find(target) != base_station_names.end()){
-        printf("got it from base statopms\n");
+        // printf("got it from base statopms\n");
         for(std::set<BaseStation>::iterator it = base_stations.begin();it != base_stations.end(); it++ ){
           if(it->getID() == target){
             string message = "THERE ";
@@ -142,7 +143,7 @@ void * talk_to_sensor(void* arg){
         }
       }
       else if(sensors.find(target) != sensors.end()){
-        printf("got it from sensors\n");
+        // printf("got it from sensors\n");
         string message = "THERE ";
         message += to_string(sensors[target].x_pos);
         message += " ";

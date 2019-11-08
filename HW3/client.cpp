@@ -260,7 +260,7 @@ void handle_input(char *sensor_id,  int sock_fd){
                 min_dist = distance;
               }
           }
-          string data_message = "DATAMESSAGE " + string(s.id) + " " + dest_id + " "+ dest_id + " " + to_string(0) + " ";
+          string data_message = "DATAMESSAGE " + string(s.id) + " " + closest->getID()+ " "+ dest_id + " " + to_string(0) + " ";
               printf("%s: Sent a new message bound for %s.\n", s.id, closest->getID().c_str());
               send(sock_fd, data_message.c_str(), data_message.length(),0);
         }
