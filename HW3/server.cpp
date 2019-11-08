@@ -42,7 +42,20 @@ bool in_range(int station_x, int station_y, int sensor_x, int sensor_y, int max_
 // std::set<string> base_station_names;
 map<string, BaseStation> base_stations;
 map<string, Sensor> sensors;
+int server_fd;
 
+string find_next_hop(string base_id, string dest_id, std::list<string>hop_list){
+  BaseStation *curr_b = &(base_stations[base_id]);
+  BaseStation *dest_b = &(base_stations[dest_id]);
+
+  set<string> dest_list  = dest_b->getLinksList();
+  if(dest_list.find(base_id) != dest_list.end()){
+    return dest_id;
+  }
+
+
+  return "Nothing";
+}
 
 string get_reachable_message(int a_x, int a_y, int range){
   string reachable = "REACHABLE ";
@@ -104,7 +117,7 @@ void * handle_single_sensor(void* arg){
       // TODO
       // handle these
       int hop_length;
-      std::set<string> hop_list;
+      std::list<string> hop_list;
 
       iss >> origin_id >> next_id >> dest_id;
       //if the message has reached its destintation
@@ -118,15 +131,22 @@ void * handle_single_sensor(void* arg){
         while(i < hop_length){
           string hop;
           iss >> hop;
-          hop_list.insert(hop);
+          hop_list.push_back(hop);
           i++;
         }
-        hop_list.insert(next_id);
+        hop_length +=1;
+        hop_list.push_back(next_id);
         //add string for hop to current base station 
         printf("%s: Message from %s to %s being forwarded through %s\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
 
+        string next_hop = find_next_hop(next_id, dest_id, hop_list);
+        string new_dm = "DATAMESSAGE " + origin_id + " " + next_hop + " " + to_string(hop_list.size()); 
+        for(string base_name : hop_list){
+          new_dm += " " + base_name;
+        }
+        new_dm += "\n";
+        send(server_fd, new_dm.c_str(), new_dm.length(),0);
 
-        
       }
     }
     else if(word == "WHERE"){
@@ -270,7 +290,7 @@ int main(int argc, char ** argv){
     // read in contents of a line into proper variables
     string temp, base_id;
     int x_pos, y_pos, num_links;
-    std::list<string> links_list;
+    std::set<string> links_list;
     ss >> base_id;
     ss >> x_pos;
     ss >> y_pos;
@@ -278,11 +298,11 @@ int main(int argc, char ** argv){
     int i = 0;
     while(i < num_links ){
       ss >> temp;
-      links_list.push_back(temp);
+      links_list.insert(temp);
       i++;
     } 
 
-    BaseStation new_base_station(base_id, x_pos, y_pos, links_list);
+    BaseStation new_base_station(base_id, x_pos, y_pos, num_links, links_list);
 
     base_stations.insert(std::make_pair(base_id, new_base_station));
     // base_stations.insert(new_base_station);
@@ -295,7 +315,7 @@ int main(int argc, char ** argv){
   //create a server
   struct sockaddr_in address;
   int opt = 1;
-  int server_fd = socket(AF_INET, SOCK_STREAM, 0);
+  server_fd = socket(AF_INET, SOCK_STREAM, 0);
   if(server_fd == 0){
     perror("Socket failed");
     exit(EXIT_FAILURE);
