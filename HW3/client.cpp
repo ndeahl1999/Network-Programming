@@ -13,6 +13,7 @@
 #include <sstream>
 #include <strings.h>
 #include <netdb.h>
+#include <fcntl.h>
 
 using std::cin;
 using std::cout;
@@ -104,6 +105,7 @@ int main(int argc, char **argv){
   send_update_position(sensor_id, sensor_range, initial_x_position, initial_y_position, sock_fd);
 
   char buffer[1025];
+  bzero(&buffer, 1025);
   int n = recv(sock_fd, buffer, 1025, 0);
   buffer[n-1] = '\0';
 
@@ -119,6 +121,7 @@ int main(int argc, char **argv){
     printf("didn't receive reachable\n");
     return 0;
   }
+
 
   // get number of reachable
   int num_reachable;
@@ -144,7 +147,7 @@ int main(int argc, char **argv){
   void* status;
 
   // create a thread to listen for messages 
-  pthread_create(&pid, NULL, listen_for, (void*)sock_fd);
+  pthread_create(&pid, NULL, listen_for, &sock_fd);
   pthread_join(pid, &status);
 
   
@@ -253,7 +256,7 @@ void handle_input(char *sensor_id,  int sock_fd){
               }
           }
           string data_message = "DATAMESSAGE " + string(s.getID()) + " " + closest->getID()+ " "+ dest_id + " " + to_string(0) + " ";
-              printf("%s: Sent a new message bound for %s.\n", s.getID(), dest_id);
+              printf("%s: Sent a new message bound for %s.\n", s.getID(), dest_id.c_str());
               send(sock_fd, data_message.c_str(), data_message.length(),0);
           }
         // handle rest of send data in here
@@ -334,14 +337,29 @@ void* listen_for(void *args){
 
   int sock_fd = (*(int *)args);
   char buffer[1025];
-  
-  while(true){
+
+    if(fcntl(sock_fd, F_SETFL, fcntl(sock_fd, F_GETFL) | O_NONBLOCK) < 0){
+      printf("couldnt' set\n");
+    }
+  // while(true){
+
+while(true){
+
+
     bzero(&buffer, 1025);
-    int n = recv(sock_fd, buffer, 1025, 0);
-    printf("got message from control saying -- %s\n", buffer);
-  }
+    int n;
+    while((n = recv(sock_fd, buffer, 1025, 0)) < 1 ){
+      
+    }
+    printf("received %s\n", buffer);
+        
+
+        
+  // }
+}
 
 
+// }
   pthread_exit(0);
   return NULL;
 }
