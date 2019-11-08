@@ -38,7 +38,8 @@ bool in_range(int station_x, int station_y, int sensor_x, int sensor_y, int max_
 
 
 // holds list of all base stations attached
-std::list<BaseStation> base_stations;
+std::set<BaseStation> base_stations;
+std::set<string> base_station_names;
 map<string, Sensor> sensors;
 
 
@@ -123,10 +124,35 @@ void * talk_to_sensor(void* arg){
           i++;
         }
       }
-  
+    }
+    else if(word == "WHERE"){
+      string target;
+      iss >> target;
+      if(base_station_names.find(target) != base_station_names.end()){
+        printf("got it from base statopms\n");
+        for(std::set<BaseStation>::iterator it = base_stations.begin();it != base_stations.end(); it++ ){
+          if(it->getID() == target){
+            string message = "THERE ";
+            message += to_string(it->getX());
+            message += " ";
+            message += to_string(it->getY());
+            send(conn_fd, message.c_str(), message.length(), 0);
 
-
-
+          }
+        }
+      }
+      else if(sensors.find(target) != sensors.end()){
+        printf("got it from sensors\n");
+        string message = "THERE ";
+        message += to_string(sensors[target].x_pos);
+        message += " ";
+        message += to_string(sensors[target].y_pos);
+        send(conn_fd, message.c_str(), message.length(),0);
+      }
+      else{
+        printf("couldnt' find\n");
+        return NULL;
+      }
     }
       else if(word == "UPDATEPOSITION"){
         char * sensor_id = (char*) malloc(1025);
@@ -254,7 +280,8 @@ int main(int argc, char ** argv){
 
     BaseStation new_base_station(base_id, x_pos, y_pos, links_list);
 
-    base_stations.push_back(new_base_station);
+    base_stations.insert(new_base_station);
+    base_station_names.insert(base_id);
 
     // cout << "Created new base station " + base_id << " with xpos " << x_pos << " and ypos " << y_pos<<" with " << num_links << " link(s)\n"; 
   }

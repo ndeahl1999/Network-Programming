@@ -194,6 +194,27 @@ void handle_input(char *sensor_id,  int sock_fd){
 
         // get a there back
 
+        string message = "WHERE " + dest_id;
+        // string dest;
+
+        // iss>>dest;
+        // message += dest;
+        send(sock_fd, message.c_str(), message.length(),0);
+
+        char buffer[1025];
+        bzero(&buffer, 1025);
+        int n = recv(sock_fd, buffer, 1025, 0);
+        std::istringstream there(buffer);
+        there >> word;
+        if(word != "THERE"){
+          perror("sux");
+          return;
+        }
+
+        int target_x;
+        int target_y;
+        there >> target_x >> target_y;
+
         // use those coordinates as the comparison to get the in reach base station
 
         //TODO
@@ -229,10 +250,15 @@ void handle_input(char *sensor_id,  int sock_fd){
           // EVERYTHING TODO
           for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
             // printf("looking at %s with a distance of %f\n", it->getID().c_str(), it->getDist());
-            if(it->getDist() < min_dist){
-              closest = &(*it);
-              min_dist = closest->getDist();
-            }
+            // if(it->getDist() < min_dist){
+            //   closest = &(*it);
+            //   min_dist = closest->getDist();
+            // }
+              double distance = sqrt( pow( it->getX() - target_x, 2) + pow(it->getY() - target_y, 2));
+              if(distance < min_dist){
+                closest = &(*it);
+                min_dist = distance;
+              }
           }
           string data_message = "DATAMESSAGE " + string(s.id) + " " + dest_id + " "+ dest_id + " " + to_string(0) + " ";
               printf("%s: Sent a new message bound for %s.\n", s.id, closest->getID().c_str());
@@ -283,6 +309,19 @@ void handle_input(char *sensor_id,  int sock_fd){
         }
 
 
+      }
+      else if(word == "WHERE"){
+        string message = "WHERE ";
+        string dest;
+
+        iss>>dest;
+        message += dest;
+        send(sock_fd, message.c_str(), message.length(),0);
+
+        char buffer[1025];
+        bzero(&buffer, 1025);
+        int n = recv(sock_fd, buffer, 1025, 0);
+        printf("%s\n", buffer);
       }
       
       else if(word == "QUIT"){

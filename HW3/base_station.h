@@ -16,11 +16,20 @@ class BaseStation{
   public:
     BaseStation(string base_id, int xpos, int ypos, list<string> links_list);
 
-    string getID(){return base_id;}
-    int getX(){return xpos;}
-    int getY(){return ypos;}
-    int getNumLinks(){return links_list.size();}
+    const string getID() const {return base_id;}
+    const int getX() const {return xpos;}
+    const int getY() const {return ypos;}
+    const int getNumLinks() const {return links_list.size();}
     list<string> getLinksList(){return links_list;}
+
+    bool operator< (const BaseStation & station) const {
+      if(this->getID().compare(station.getID()) < 0){
+        return true;
+      }
+      else{
+        return false;
+      }
+    }
 
 };
 
