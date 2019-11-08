@@ -22,6 +22,11 @@ using std::cout;
 using std::endl;
 using std::string;
 
+typedef struct {
+  int x;
+  int y;
+} Pair;
+
 
 bool in_range(int station_x, int station_y, int sensor_x, int sensor_y, int max_dist){
 
@@ -44,6 +49,37 @@ map<string, BaseStation> base_stations;
 map<string, Sensor> sensors;
 int server_fd;
 
+
+string get_coordinates(string target){
+
+  string message = "THERE ";
+  if(base_stations.find(target) != base_stations.end()){
+    // printf("got it from base statopms\n");
+    for(std::map<string, BaseStation>::iterator it = base_stations.begin();it != base_stations.end(); it++ ){
+      if(it->second.getID() == target){
+        // string message = "THERE ";
+        message += to_string(it->second.getX());
+        message += " ";
+        message += to_string(it->second.getY());
+        // send(conn_fd, message.c_str(), message.length(), 0);
+
+      }
+    }
+  }
+  else if(sensors.find(target) != sensors.end()){
+    // printf("got it from sensors\n");
+    // string message = "THERE ";
+    message += to_string(sensors[target].getX());
+    message += " ";
+    message += to_string(sensors[target].getY());
+    // send(conn_fd, message.c_str(), message.length(),0);
+  }
+  else{
+    printf("couldnt' find\n");
+    return NULL;
+  }
+  return message;
+}
 string find_next_hop(string base_id, string dest_id, std::list<string>hop_list){
   BaseStation *curr_b = &(base_stations[base_id]);
   BaseStation *dest_b = &(base_stations[dest_id]);
@@ -137,47 +173,56 @@ void * handle_single_sensor(void* arg){
         }
         hop_length +=1;
         hop_list.push_back(next_id);
+
+        
         //add string for hop to current base station 
         printf("%s: Message from %s to %s being forwarded through %s\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
 
-        string next_hop = find_next_hop(next_id, dest_id, hop_list);
-        string new_dm = "DATAMESSAGE " + origin_id + " " + next_hop + " " + to_string(hop_list.size()); 
-        for(string base_name : hop_list){
-          new_dm += " " + base_name;
+
+        // this means the next one to handle the message is base station
+        std::map<string, BaseStation>::iterator it = base_stations.find(next_id);
+        if( it != base_stations.end()){
+          BaseStation *current = &(it->second);
+
+          // check if it has the target in reach
+          if(current->canConnect(dest_id)){
+            printf("can connect to %s\n", dest_id.c_str());
+          }
+
+          // else find neighbor that is closest to that target
+          else{
+
+            // 
+            if(base_stations.find(dest_id) != base_stations.end()){
+
+            }
+            else if(sensors.find(dest_id) != sensors.end()){
+
+            }
+
+          }
         }
-        new_dm += "\n";
-        send(server_fd, new_dm.c_str(), new_dm.length(),0);
+
+        
+
+        // string next_hop = find_next_hop(next_id, dest_id, hop_list);
+        // string new_dm = "DATAMESSAGE " + origin_id + " " + next_hop + " " + to_string(hop_list.size()); 
+        // for(string base_name : hop_list){
+        //   new_dm += " " + base_name;
+        // }
+        // new_dm += " 0";
+        // printf("--%s\n", new_dm.c_str());
+
+        // new_dm += "";
+        // send(server_fd, new_dm.c_str(), new_dm.length(),0);
 
       }
     }
     else if(word == "WHERE"){
       string target;
       iss >> target;
-      if(base_stations.find(target) != base_stations.end()){
-        // printf("got it from base statopms\n");
-        for(std::map<string, BaseStation>::iterator it = base_stations.begin();it != base_stations.end(); it++ ){
-          if(it->second.getID() == target){
-            string message = "THERE ";
-            message += to_string(it->second.getX());
-            message += " ";
-            message += to_string(it->second.getY());
-            send(conn_fd, message.c_str(), message.length(), 0);
-
-          }
-        }
-      }
-      else if(sensors.find(target) != sensors.end()){
-        // printf("got it from sensors\n");
-        string message = "THERE ";
-        message += to_string(sensors[target].getX());
-        message += " ";
-        message += to_string(sensors[target].getY());
-        send(conn_fd, message.c_str(), message.length(),0);
-      }
-      else{
-        printf("couldnt' find\n");
-        return NULL;
-      }
+      string message = get_coordinates(target);
+      send(conn_fd, message.c_str(), message.length(),0 );
     }
       else if(word == "UPDATEPOSITION"){
         char * sensor_id = (char*) malloc(1025);
@@ -246,16 +291,11 @@ void * listen_for_new_sensors(void * arg){
       pthread_create(&tid, NULL, handle_single_sensor, (void*)ID);
 
       
-      // printf("RECEIVED UPDATE POSITION\n");
     }else{
 
     }
-
-    
-
   }
 } 
-
 
 void close_server(){
 

@@ -24,6 +24,12 @@ class BaseStation{
     const int getY() const {return ypos;}
     const int getNumLinks() const {return num_links;}
     set<string> getLinksList(){return links_list;}
+    bool canConnect(string dest_id) {
+      if(links_list.find(dest_id) != links_list.end()){
+        return true;
+      }
+      return false;
+    }
 
     bool operator< (const BaseStation & station) const {
       if(this->getID().compare(station.getID()) < 0){

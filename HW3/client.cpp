@@ -51,7 +51,7 @@ void handle_input(char* sensor_id, int sock_fd);
 
 
 // spawn a new thread into this function
-// will keep on doing a `read` call for messages
+// will keep on doing a `recv` call for messages
 void* listen_for(void *args);
 Sensor s;
 
