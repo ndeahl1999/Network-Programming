@@ -3,6 +3,7 @@
 
 #include <string>
 #include <list>
+#include <set>
 
 using namespace std;
 
@@ -11,16 +12,18 @@ class BaseStation{
     string base_id;
     int xpos;
     int ypos;
-    list<string> links_list;
+    int num_links;
+    set<string> links_list;
 
   public:
-    BaseStation(string base_id, int xpos, int ypos, list<string> links_list);
+    BaseStation(){ }
+    BaseStation(string base_id, int xpos, int ypos, int num_links, set<string> links_list);
 
     const string getID() const {return base_id;}
     const int getX() const {return xpos;}
     const int getY() const {return ypos;}
-    const int getNumLinks() const {return links_list.size();}
-    list<string> getLinksList(){return links_list;}
+    const int getNumLinks() const {return num_links;}
+    set<string> getLinksList(){return links_list;}
 
     bool operator< (const BaseStation & station) const {
       if(this->getID().compare(station.getID()) < 0){
@@ -33,10 +36,11 @@ class BaseStation{
 
 };
 
-BaseStation::BaseStation(string base_id, int xpos, int ypos, list<string> links_list){
+BaseStation::BaseStation(string base_id, int xpos, int ypos, int num_links, set<string> links_list){
   this->base_id = base_id;
   this->xpos = xpos;
   this->ypos = ypos;
+  this->num_links = num_links;
   this->links_list = links_list;
 }
 
