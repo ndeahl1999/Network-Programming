@@ -83,8 +83,8 @@ void * talk_to_sensor(void* arg){
   // printf("Created new thread for sensor %s\n", ID);
 
   Sensor s = sensors.find(string(ID))->second;
-  int conn_fd = s.conn_fd;
-  string reachable = get_reachable_message(s.x_pos, s.y_pos, s.range);
+  int conn_fd = s.getFD();
+  string reachable = get_reachable_message(s.getX(), s.getY(), s.getRange());
 
 
   send(conn_fd, reachable.c_str(), reachable.length(),0);
@@ -145,9 +145,9 @@ void * talk_to_sensor(void* arg){
       else if(sensors.find(target) != sensors.end()){
         // printf("got it from sensors\n");
         string message = "THERE ";
-        message += to_string(sensors[target].x_pos);
+        message += to_string(sensors[target].getX());
         message += " ";
-        message += to_string(sensors[target].y_pos);
+        message += to_string(sensors[target].getY());
         send(conn_fd, message.c_str(), message.length(),0);
       }
       else{
@@ -237,7 +237,7 @@ void close_server(){
 
   map<string, Sensor>::iterator itr = sensors.begin();
   while(itr != sensors.end()){
-    close(itr->second.conn_fd);
+    close(itr->second.getFD());
     itr++;
   }
   

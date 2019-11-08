@@ -12,14 +12,22 @@ class Sensor{
     ~Sensor();
     Sensor(char* id_, int range_, int x_pos_, int y_pos_, int conn_fd_);
 
+    const char* getID() const { return id; }
+    const int getRange() const { return range; }
+    const int getX() const { return x_pos; }
+    const int getY() const { return y_pos; }
+    const int getFD() const { return conn_fd; }
+    void setX(int x) { x_pos = x; }
+    void setY(int y) { y_pos = y; }
     void add_in_reach(const SensorBaseStation station);
+    std::set<SensorBaseStation> in_reach;
 
+  private:
     char* id;
     int range;
     int x_pos;
     int y_pos;
     int conn_fd;
-    std::set<SensorBaseStation> in_reach;
 
 };
 

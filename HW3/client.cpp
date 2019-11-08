@@ -144,7 +144,7 @@ int main(int argc, char **argv){
   void* status;
 
   // create a thread to listen for messages 
-  pthread_create(&pid, NULL, listen_for, NULL);
+  pthread_create(&pid, NULL, listen_for, (void*)sock_fd);
   pthread_join(pid, &status);
 
   
@@ -184,36 +184,6 @@ void handle_input(char *sensor_id,  int sock_fd){
         string dest_id;
         iss >> dest_id;
 
-        // printf("%s: %s %s\n", sensor_id, word.c_str(), dest_id.c_str());
-        // string message  = "DATAMESSAGE " + string(sensor_id) + " " + 
-
-
-        // MAJOR TODO
-
-        // send a where 
-
-        // get a there back
-
-        string message = "WHERE " + dest_id;
-        // string dest;
-
-        // iss>>dest;
-        // message += dest;
-        send(sock_fd, message.c_str(), message.length(),0);
-
-        char buffer[1025];
-        bzero(&buffer, 1025);
-        int n = recv(sock_fd, buffer, 1025, 0);
-        std::istringstream there(buffer);
-        there >> word;
-        if(word != "THERE"){
-          perror("sux");
-          return;
-        }
-
-        int target_x;
-        int target_y;
-        there >> target_x >> target_y;
 
         // use those coordinates as the comparison to get the in reach base station
 
@@ -236,47 +206,71 @@ void handle_input(char *sensor_id,  int sock_fd){
           for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
 
             if(it->getID() == dest_id){
-              string data_message = "DATAMESSAGE " + string(s.id) + " " + dest_id + " "+ dest_id + " " + to_string(0) + " ";
-              printf("%s: Sent a new message bound for %s.\n", s.id, it->getID().c_str());
+              string data_message = "DATAMESSAGE " + string(s.getID()) + " " + dest_id + " "+ dest_id + " " + to_string(0) + " ";
+              printf("%s: Sent a new message bound for %s.\n", s.getID(), it->getID().c_str());
               send(sock_fd, data_message.c_str(), data_message.length(),0);
               
               found = true;
             }
           }
+
+          // if found, no need to find next person to send it to
           if(found == true){
             continue;
           }
 
-          // EVERYTHING TODO
+
+          // couldn't find the dest_id in the list of reachable
+          // now send a where to find which node to send the message to next
+
+          // send a where 
+          string message = "WHERE " + dest_id;
+          send(sock_fd, message.c_str(), message.length(),0);
+
+          // get a there back
+          char buffer[1025];
+          bzero(&buffer, 1025);
+          int n = recv(sock_fd, buffer, 1025, 0);
+
+          // parse the there
+          std::istringstream there(buffer);
+          there >> word;
+          if(word != "THERE"){
+            perror("sux");
+            return;
+          }
+
+          int target_x;
+          int target_y;
+          there >> target_x >> target_y;
+
+          // look through the list of base stations and see which is the closest
           for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
-            // printf("looking at %s with a distance of %f\n", it->getID().c_str(), it->getDist());
-            // if(it->getDist() < min_dist){
-            //   closest = &(*it);
-            //   min_dist = closest->getDist();
-            // }
               double distance = sqrt( pow( it->getX() - target_x, 2) + pow(it->getY() - target_y, 2));
               if(distance < min_dist){
                 closest = &(*it);
                 min_dist = distance;
               }
           }
-          string data_message = "DATAMESSAGE " + string(s.id) + " " + closest->getID()+ " "+ dest_id + " " + to_string(0) + " ";
-              printf("%s: Sent a new message bound for %s.\n", s.id, closest->getID().c_str());
+          string data_message = "DATAMESSAGE " + string(s.getID()) + " " + closest->getID()+ " "+ dest_id + " " + to_string(0) + " ";
+              printf("%s: Sent a new message bound for %s.\n", s.getID(), dest_id);
               send(sock_fd, data_message.c_str(), data_message.length(),0);
-        }
+          }
         // handle rest of send data in here
       }
+
+      // move locations
       else if(word == "MOVE"){
         int new_x;
         int new_y;
         iss >> new_x >> new_y;
 
         // set the new coordinates
-        s.x_pos = new_x;
-        s.y_pos = new_y;
+        s.setX(new_x);
+        s.setY(new_y);
 
         // send an update position command to the server
-        send_update_position(sensor_id, s.range, s.x_pos, s.y_pos, sock_fd);
+        send_update_position(sensor_id, s.getRange(), s.getX(), s.getY(), sock_fd);
 
         // receive new list of reachable
         char buffer[1025];
@@ -291,6 +285,8 @@ void handle_input(char *sensor_id,  int sock_fd){
           return;
         }
 
+        // TODO handle more gracefully
+        // reset the set of reachable base stations to the sensor
         s.in_reach = std::set<SensorBaseStation>();
         // get number of reachable
         int num_reachable;
@@ -336,6 +332,14 @@ void handle_input(char *sensor_id,  int sock_fd){
 void* listen_for(void *args){
 
 
+  int sock_fd = (*(int *)args);
+  char buffer[1025];
+  
+  while(true){
+    bzero(&buffer, 1025);
+    int n = recv(sock_fd, buffer, 1025, 0);
+    printf("got message from control saying -- %s\n", buffer);
+  }
 
 
   pthread_exit(0);
