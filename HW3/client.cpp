@@ -336,27 +336,36 @@ void* listen_for(void *args){
 
 
   int sock_fd = (*(int *)args);
-  char buffer[1025];
+  // char buffer[1025];
 
-    if(fcntl(sock_fd, F_SETFL, fcntl(sock_fd, F_GETFL) | O_NONBLOCK) < 0){
-      printf("couldnt' set\n");
-    }
+  //   if(fcntl(sock_fd, F_SETFL, fcntl(sock_fd, F_GETFL) | O_NONBLOCK) < 0){
+  //     printf("couldnt' set\n");
+    // }
   // while(true){
 
-while(true){
+// while(true){
 
 
-    bzero(&buffer, 1025);
-    int n;
-    while((n = recv(sock_fd, buffer, 1025, 0)) < 1 ){
-      
-    }
-    printf("received %s\n", buffer);
+//     bzero(&buffer, 1025); 
+//     int n = recv(sock_fd, buffer, 1025, 0);
+//     if(errno == EAGAIN || errno == EWOULDBLOCK){
+//     }
+//     // else{
+//       printf("gottem\n");
+    // }
+
+    // while((n = recv(sock_fd, buffer, 1025, 0)) < 1 ){
+    //   if(errno == EAGAIN || errno == EWOULDBLOCK){
+    //     printf("this went through\n");
+    //   }
+    // }
+    //     printf("other statement\n");
+    // printf("received %s\n", buffer);
         
 
         
   // }
-}
+// }
 
 
 // }

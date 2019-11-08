@@ -93,6 +93,7 @@ void * handle_single_sensor(void* arg){
     bzero(&buffer, 1025);
     n = recv(conn_fd, buffer, 1025, 0);
     string message = string(buffer);
+
     std::istringstream iss(message);
     string word;
     iss >> word;
