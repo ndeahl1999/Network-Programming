@@ -202,7 +202,6 @@ void * handle_single_sensor(void* arg){
 
           }
         }
-
         
 
         // string next_hop = find_next_hop(next_id, dest_id, hop_list);
