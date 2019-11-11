@@ -237,7 +237,6 @@ void * handle_single_sensor(void* arg){
         // new_dm += "";
         // send(server_fd, new_dm.c_str(), new_dm.length(),0);
 
-      }
     }
     else if(word == "WHERE"){
       string target;
