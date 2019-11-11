@@ -48,6 +48,7 @@ void send_update_position(char* sensor_id, int sensor_range, int x_pos, int y_po
 // updateposition [sensorid] [sensorrange] [current x] [current y]
 // quit
 void handle_input(char* sensor_id, int sock_fd);
+void receive_message(string message, string sensor_id);
 
 
 // spawn a new thread into this function
@@ -161,7 +162,7 @@ int main(int argc, char **argv){
       char buffer[1025];
       bzero(&buffer, 1025);
       int n = recv(sock_fd, buffer, 1025, 0);
-      printf("got %s\n", buffer);
+      receive_message(string(buffer), string(sensor_id));
       //RECEIVE data and pass into function
     }
 
@@ -341,6 +342,26 @@ int main(int argc, char **argv){
 
   return 1;
 
+}
+
+void receive_message(string buffer, string sensor_id){
+  std::istringstream ss(buffer);
+
+  string message;
+  ss >> message;
+  if(message == "DATAMESSAGE"){
+    string origin_id, next_id, dest_id;
+    ss >> origin_id >> next_id >> dest_id;
+
+    if(dest_id == sensor_id){
+      printf("%s: Message from %s to %s succesfully received.\n", sensor_id.c_str(), origin_id.c_str(), dest_id.c_str());
+      return;
+    }
+
+
+
+
+  }
 }
 
 
