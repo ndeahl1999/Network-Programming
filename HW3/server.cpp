@@ -31,6 +31,7 @@ typedef struct {
 bool in_range(int station_x, int station_y, int sensor_x, int sensor_y, int max_dist){
 
   double distance = sqrt( pow(station_x - sensor_x, 2) + pow(station_y - sensor_y, 2));
+  printf("the distance is %f and max is %d\n", distance, max_dist);
   if(distance > max_dist){
     return false;
   }
@@ -122,7 +123,7 @@ Pair coordinates_of(string target){
 //   return "Nothing";
 // }
 
-string get_reachable_message(int a_x, int a_y, int range){
+string get_reachable_message(string id, int a_x, int a_y, int range){
   string reachable = "REACHABLE ";
   // append all the base stations to reachable
   int counter=0;
@@ -143,6 +144,27 @@ string get_reachable_message(int a_x, int a_y, int range){
       counter++;
     }
   }
+  for(std::pair<string, Sensor> entry: sensors){
+    Sensor *s = &(entry.second);
+
+    string temp = s->getID();
+    printf("%s, %d, %d, %d, %d\n", temp.c_str(), s->getX(), s->getY(), a_x, a_y);
+
+    if(s->getID() == id){
+      continue;
+    }
+    if(in_range(s->getX(), s->getY(), a_x, a_y, range)){
+
+      
+      reachable_list+=s->getID();
+      reachable_list+= " ";
+      reachable_list+=to_string(s->getX());
+      reachable_list+= " ";
+      reachable_list+=to_string(s->getY());
+      reachable_list+= " ";
+      counter++;
+    }
+  }
   reachable+=to_string(counter);
   reachable+=" ";
   reachable+=reachable_list;
@@ -159,7 +181,7 @@ void * handle_single_sensor(void* arg){
 
   Sensor s = sensors.find(string(ID))->second;
   int conn_fd = s.getFD();
-  string reachable = get_reachable_message(s.getX(), s.getY(), s.getRange());
+  string reachable = get_reachable_message(s.getID(), s.getX(), s.getY(), s.getRange());
 
 
   send(conn_fd, reachable.c_str(), reachable.length(),0);
@@ -210,6 +232,11 @@ void * handle_single_sensor(void* arg){
         hop_length +=1;
         hop_list.push_back(next_id);
 
+
+        // check here if it's a sensor, if it is, no need to go do below logic
+
+        
+
         
 
         // BaseStation *current = 
@@ -223,6 +250,7 @@ void * handle_single_sensor(void* arg){
           BaseStation *current = &(it->second);
 
 
+          Pair p = coordinates_of(dest_id);
         
 
 
@@ -244,19 +272,30 @@ void * handle_single_sensor(void* arg){
               // for all possible neighbors
               for(set<string>::iterator it = neighbors.begin(); it != neighbors.end(); it++){
 
-                // if the hop list doesn't contain THIS neighbor, set it
+                // if the hop list doesn't contain THIS neighbor, get if its the closest
                 std::vector<string>::iterator to_jump_iterator = std::find(hop_list.begin(), hop_list.end(), *it);
 
                 // if that neighbor is not already in the hoplist
                 // reached end of hop list and couldn't find it
                 if(to_jump_iterator == hop_list.end()){
 
+                  // get dist
+                  BaseStation* temp = &(base_stations[*(it)]);
+                  double distance = sqrt( pow( temp->getX() - p.x, 2) + pow(temp->getY() - p.y, 2));
+
+                  // set dist
+                  if(distance < min_dist){
+                    min_dist = distance;
+                    min_hop = *(it);
+                  }
+
+
 
                   // get the next_id
-                  next_id = *(it);
+                  // next_id = *(it);
 
-                  // new current base station
-                  BaseStation *current = &((base_stations.find(next_id)->second));
+                  // // new current base station
+                  // BaseStation *current = &((base_stations.find(next_id)->second));
 
                   // double distance = sqrt( pow( it->getX() - target_x, 2) + pow(it->getY() - target_y, 2));
 
@@ -264,6 +303,14 @@ void * handle_single_sensor(void* arg){
                 }
                 
               }
+
+              // now the closest hop is set
+              if(min_hop == ""){
+                printf("handle no other base stations here\n");
+                break;
+              }
+
+              BaseStation* current = &((base_stations.find(min_hop)->second));
 
 
               if(current->canConnect(dest_id)){
@@ -355,7 +402,7 @@ void * handle_single_sensor(void* arg){
         // updating the map entry with a new Sensor
         sensors[string(sensor_id)] = sen;
 
-        string reachable = get_reachable_message(x_pos, y_pos, range);
+        string reachable = get_reachable_message("", x_pos, y_pos, range);
 
 
         send(conn_fd, reachable.c_str(), reachable.length()-1,0);
