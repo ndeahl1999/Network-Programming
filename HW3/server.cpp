@@ -138,14 +138,20 @@ void * handle_single_sensor(void* arg){
   int n;
   char buffer[1025];
   
+
+  // main loop waiting for messages
   while(true){
     bzero(&buffer, 1025);
+
+    // wait for a recv from self
     n = recv(conn_fd, buffer, 1025, 0);
     string message = string(buffer);
 
     std::istringstream iss(message);
     string word;
     iss >> word;
+
+
     if(word == "DATAMESSAGE"){
       string origin_id;
       string next_id;
@@ -161,6 +167,7 @@ void * handle_single_sensor(void* arg){
       if(next_id == dest_id){
         //message has reached is destination succesfully
         printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), origin_id.c_str(), next_id.c_str());  
+
       }else{
         iss>>hop_length;
         int i = 0;
@@ -181,25 +188,40 @@ void * handle_single_sensor(void* arg){
 
         // this means the next one to handle the message is base station
         std::map<string, BaseStation>::iterator it = base_stations.find(next_id);
-        if( it != base_stations.end()){
-          BaseStation *current = &(it->second);
+        // while((it = base_stations.find(next_id)) != base_stations.end()){
 
-          // check if it has the target in reach
-          if(current->canConnect(dest_id)){
-            printf("can connect to %s\n", dest_id.c_str());
-          }
+        if(it == base_stations.end()){
 
-          // else find neighbor that is closest to that target
-          else{
+          // send it to next client
 
-            // 
-            if(base_stations.find(dest_id) != base_stations.end()){
+        }
+        else{
+
+          // pass it on to next base station continuously until end
+
+        }
+
+          // if its a base station to handle
+          if( it != base_stations.end()){
+            BaseStation *current = &(it->second);
+
+            // check if it has the target in reach
+            if(current->canConnect(dest_id)){
+              printf("can connect to %s\n", dest_id.c_str());
+            }
+
+            // else find neighbor that is closest to that target
+            else{
+
+              // 
+              if(base_stations.find(dest_id) != base_stations.end()){
+
+              }
+              else if(sensors.find(dest_id) != sensors.end()){
+
+              }
 
             }
-            else if(sensors.find(dest_id) != sensors.end()){
-
-            }
-
           }
         }
         
