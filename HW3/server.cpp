@@ -235,19 +235,27 @@ void * handle_single_sensor(void* arg){
             while(true){
 
               //add string for hop to current base station 
-              printf("%s: Message from %s to %s being forwarded through %s\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
+              printf("%s: Message from %s to %s being forwarded through %s.\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
 
               double min_dist = 10000;
               string min_hop = "";
               set<string> neighbors = current->getLinksList();
+
+              // for all possible neighbors
               for(set<string>::iterator it = neighbors.begin(); it != neighbors.end(); it++){
+
+                // if the hop list doesn't contain THIS neighbor, set it
                 std::vector<string>::iterator to_jump_iterator = std::find(hop_list.begin(), hop_list.end(), *it);
 
                 // if that neighbor is not already in the hoplist
                 // reached end of hop list and couldn't find it
                 if(to_jump_iterator == hop_list.end()){
 
-                  next_id = *(to_jump_iterator);
+
+                  // get the next_id
+                  next_id = *(it);
+
+                  // new current base station
                   BaseStation *current = &((base_stations.find(next_id)->second));
 
                   // double distance = sqrt( pow( it->getX() - target_x, 2) + pow(it->getY() - target_y, 2));
