@@ -143,18 +143,30 @@ int main(int argc, char **argv){
   //   cout<<it->getID() << " "<< it->getX()<<" " << it->getY()<<endl;
   // }
   
+  fd_set readfds;
 
-  void* status;
+  while (true){
+    FD_ZERO(&readfds);
 
-  // create a thread to listen for messages 
-  pthread_create(&pid, NULL, listen_for, &sock_fd);
-  pthread_join(pid, &status);
+    FD_SET(sock_fd, &readfds);
+    FD_SET(STDIN_FILENO, &readfds);
 
-  
-  // main thread will start handling input  
-  handle_input(sensor_id, sock_fd);
+    if((select(sock_fd+1,&readfds,NULL,NULL,0)<0)){
+      perror("select");
+      exit(EXIT_FAILURE);
+    }
 
-  
+    //Client has received data from a socket
+    if(FD_ISSET(sock_fd, &readfds)){
+      //RECEIVE data and pass into function
+    }
+
+    //Client has received data from stdin
+    if(FD_ISSET(STDIN_FILENO, &readfds)){
+      
+    }
+
+  }  
   
   printf("finished execution\n");
   close(sock_fd);
