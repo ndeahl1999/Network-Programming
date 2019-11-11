@@ -80,18 +80,47 @@ string get_coordinates(string target){
   }
   return message;
 }
-string find_next_hop(string base_id, string dest_id, std::list<string>hop_list){
-  BaseStation *curr_b = &(base_stations[base_id]);
-  BaseStation *dest_b = &(base_stations[dest_id]);
 
-  set<string> dest_list  = dest_b->getLinksList();
-  if(dest_list.find(base_id) != dest_list.end()){
-    return dest_id;
+Pair coordinates_of(string target){
+
+  map<string, BaseStation>::iterator it = base_stations.find(target);
+  map<string, Sensor>::iterator itr = sensors.find(target);
+  if(it != base_stations.end()){
+    BaseStation* current = &(it->second);
+    Pair p;
+    p.x = current->getX();
+    p.y = current->getY();
+
+    return p;
+  }
+  else if(itr != sensors.end()){
+    Sensor* current = &(itr->second);
+    Pair p;
+    p.x = current->getX();
+    p.y = current->getY();
+
+    return p;
   }
 
-
-  return "Nothing";
+  Pair p;
+  p.x = -1;
+  p.y = -1;
+  return p;
+  // Pair p;
+  
 }
+// string find_next_hop(string base_id, string dest_id, std::list<string>hop_list){
+//   BaseStation *curr_b = &(base_stations[base_id]);
+//   BaseStation *dest_b = &(base_stations[dest_id]);
+
+//   set<string> dest_list  = dest_b->getLinksList();
+//   if(dest_list.find(base_id) != dest_list.end()){
+//     return dest_id;
+//   }
+
+
+//   return "Nothing";
+// }
 
 string get_reachable_message(int a_x, int a_y, int range){
   string reachable = "REACHABLE ";
@@ -185,44 +214,80 @@ void * handle_single_sensor(void* arg){
         //add string for hop to current base station 
         printf("%s: Message from %s to %s being forwarded through %s\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
 
+        // BaseStation *current = 
+
 
         // this means the next one to handle the message is base station
         std::map<string, BaseStation>::iterator it = base_stations.find(next_id);
-        // while((it = base_stations.find(next_id)) != base_stations.end()){
+        // // while((it = base_stations.find(next_id)) != base_stations.end()){
 
-        if(it == base_stations.end()){
 
-          // send it to next client
+        //   // if its a base station to handle
+          BaseStation *current = &(it->second);
 
-        }
-        else{
 
-          // pass it on to next base station continuously until end
-
-        }
-
-          // if its a base station to handle
-          if( it != base_stations.end()){
-            BaseStation *current = &(it->second);
-
-            // check if it has the target in reach
-            if(current->canConnect(dest_id)){
-              printf("can connect to %s\n", dest_id.c_str());
-            }
-
-            // else find neighbor that is closest to that target
-            else{
-
-              // 
-              if(base_stations.find(dest_id) != base_stations.end()){
-
-              }
-              else if(sensors.find(dest_id) != sensors.end()){
-
-              }
-
-            }
+          // check if it has the target in reach
+          if(current->canConnect(dest_id)){
+            printf("%s: Message from %s to %s successfully received.\n",dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
           }
+
+          // check the neighbors and traverse the list
+          else{
+
+            // continue traversing base stations until end
+            while(true){
+              
+              
+
+            // if hop list contains all possible neighbors
+
+            // otherwise, not at end
+
+            }
+
+            Pair p = coordinates_of(dest_id);
+
+            // bool is_base_station = false;
+            BaseStation* closest_base_station;
+            // Sensor* closest_sensor;
+
+            double lowest_dist = 1000000;
+            for(map<string, BaseStation>::iterator it = base_stations.begin(); it != base_stations.end(); it++){
+
+              double distance = sqrt( pow( it->second.getX() - p.x, 2) + pow(it->second.getY() - p.y, 2));
+              if(distance < lowest_dist){
+                closest_base_station = &(it->second);
+                lowest_dist = distance; 
+                // is_base_station = true;
+              }
+            }
+
+            // for(map<string, Sensor>::iterator it = sensors.begin(); it != sensors.end(); it++){
+
+            //   double distance = sqrt( pow( it->second.getX() - p.x, 2) + pow(it->second.getY() - p.y, 2));
+            //   if(distance < lowest_dist){
+            //     closest_sensor = &(it->second);
+            //     lowest_dist = distance; 
+            //     is_base_station = false;
+            //   }
+            // }
+
+
+
+          }
+
+        //   // else find neighbor that is closest to that target
+        //   else{
+
+        //     // 
+        //     if(base_stations.find(dest_id) != base_stations.end()){
+
+        //     }
+        //     else if(sensors.find(dest_id) != sensors.end()){
+
+        //     }
+
+        //   }
         }
         
 
@@ -422,7 +487,8 @@ int main(int argc, char ** argv){
 
       iss >> origin_id >> dest_id;
 
-      string message = "THIS IS A TEST";
+      // origin, next, destination, hop length, [hop list]
+      string message = "DATAMESSAGE ";
       int sock_fd  = sensors[origin_id].getFD();
       send(sock_fd, message.c_str(), message.length(), 0);
       // send("")
