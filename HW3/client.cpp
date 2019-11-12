@@ -135,7 +135,7 @@ int main(int argc, char **argv){
     int y;
     iss >> id >> x >> y;
 
-    printf("got - %s - %d - %d\n", id.c_str(), x, y);
+    // printf("got - %s - %d - %d\n", id.c_str(), x, y);
     SensorBaseStation temp(id, x, y);
 
     // add it to the sensor

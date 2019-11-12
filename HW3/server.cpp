@@ -31,7 +31,7 @@ typedef struct {
 bool in_range(int station_x, int station_y, int sensor_x, int sensor_y, int max_dist){
 
   double distance = sqrt( pow(station_x - sensor_x, 2) + pow(station_y - sensor_y, 2));
-  printf("the distance is %f and max is %d\n", distance, max_dist);
+  // printf("the distance is %f and max is %d\n", distance, max_dist);
   if(distance > max_dist){
     return false;
   }
@@ -148,7 +148,7 @@ string get_reachable_message(string id, int a_x, int a_y, int range){
     Sensor *s = &(entry.second);
 
     string temp = s->getID();
-    printf("%s, %d, %d, %d, %d\n", temp.c_str(), s->getX(), s->getY(), a_x, a_y);
+    // printf("%s, %d, %d, %d, %d\n", temp.c_str(), s->getX(), s->getY(), a_x, a_y);
 
     if(s->getID() == id){
       continue;
@@ -289,18 +289,18 @@ void * handle_single_sensor(void* arg){
                     min_hop = *(it);
                   }
 
-
-
-                  // get the next_id
-                  // next_id = *(it);
-
-                  // // new current base station
-                  // BaseStation *current = &((base_stations.find(next_id)->second));
-
-                  // double distance = sqrt( pow( it->getX() - target_x, 2) + pow(it->getY() - target_y, 2));
-
-
                 }
+                
+              }
+
+              for(map<string, Sensor>::iterator it = sensors.begin(); it!= sensors.end(); it++){
+                Sensor* temp = &(it->second);
+                double distance = sqrt( pow( temp->getX() - p.x, 2) + pow(temp->getY() - p.y, 2));
+
+                if(distance < min_dist){
+                    min_dist = distance;
+                    min_hop = it->first;
+                  }
                 
               }
 
@@ -310,12 +310,30 @@ void * handle_single_sensor(void* arg){
                 break;
               }
 
-              BaseStation* current = &((base_stations.find(min_hop)->second));
+              std::map<string, BaseStation>::iterator it = base_stations.find(min_hop);
+              //if a base station is next
+              if(it != base_stations.end()){
+
+                BaseStation* current = &((base_stations.find(min_hop)->second));
+
+                if(current->canConnect(dest_id)){
+                  printf("%s: Message from %s to %s successfully received.\n",dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
+                  break;
+                }
+
+                // add to hop list
+                next_id = current->getID();
+                hop_list.push_back(next_id);
+              }
+              // otherwise a sensor is next
+              else{
+                Sensor* current = &((sensors.find(min_hop)->second));
+
+                string message  = "DATAMESSAGE ";
 
 
-              if(current->canConnect(dest_id)){
-                printf("%s: Message from %s to %s successfully received.\n",dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
-                break;
+
+
               }
               
 
