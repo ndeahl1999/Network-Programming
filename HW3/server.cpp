@@ -150,7 +150,7 @@ string get_reachable_message(string id, int a_x, int a_y, int range){
     string temp = s->getID();
     // printf("%s, %d, %d, %d, %d\n", temp.c_str(), s->getX(), s->getY(), a_x, a_y);
 
-    if(s->getID() == id){
+    if(temp == id){
       continue;
     }
     if(in_range(s->getX(), s->getY(), a_x, a_y, range)){
@@ -216,6 +216,29 @@ void * handle_single_sensor(void* arg){
       iss >> origin_id >> next_id >> dest_id;
       //if the message has reached its destintation
       if(next_id == dest_id){
+        // printf("this happens\n");
+
+        if(sensors.find(dest_id) != sensors.end()){
+
+          Sensor *target = &(sensors.find(dest_id)->second);
+          string message = "DATAMESSAGE " + origin_id;
+          message+=" ";
+          message+=dest_id;
+          message+=" ";
+          message+=dest_id;
+          message+=" ";
+          message+=to_string(hop_list.size());
+          message+=" ";
+          for(int i=0;i<hop_list.size();i++){
+            message+=hop_list[i];
+            message+=" ";
+          }
+
+          // printf("message is -- %s\n", message.c_str());
+
+          send(target->getFD(), message.c_str(), message.length(), 0);
+          continue;
+        }
         //message has reached is destination succesfully
         printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), origin_id.c_str(), next_id.c_str());  
 
@@ -268,8 +291,27 @@ void * handle_single_sensor(void* arg){
               printf("%s: Message from %s to %s being forwarded through %s\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
 
                 if(next->canConnect(dest_id)){
-                  printf("%s: Message from %s to %s successfully received.\n",dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
-                  break;
+                  // printf("comes right before\n");
+                  // printf("this comes right before\n");
+                  // if it is a sensor
+                  // if(sensors.find(dest_id) != sensors.end()){
+                  //     string message = "DATAMESSAGE " + origin_id;
+                  //     message+=" ";
+                  //     message+=dest_id;
+                  //     message+=" ";
+                  //     message+=" ";
+                  //     message+=to_string(hop_list.size());
+                  //     message+=" ";
+                  //     for(int i=0;i<hop_list.size();i++){
+                  //       message+=hop_list[i];
+                  //       message+=" ";
+                  //     }
+                  // }
+                  // else{
+
+                    printf("%s: Message from %s to %s successfully received.\n",dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
+                    break;
+                  // }
                 }
               // }
 
@@ -339,8 +381,32 @@ void * handle_single_sensor(void* arg){
                 BaseStation* current = &((base_stations.find(min_hop)->second));
 
                 if(current->canConnect(dest_id)){
-                  printf("%s: Message from %s to %s successfully received.\n",dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
-                  break;
+                  // if it is a sensor
+                  // if(sensors.find(dest_id) != sensors.end()){
+
+                  //     Sensor *target = &(sensors.find(dest_id)->second);
+                  //     string message = "DATAMESSAGE " + origin_id;
+                  //     message+=" ";
+                  //     message+=dest_id;
+                  //     message+=" ";
+                  //     message+=" ";
+                  //     message+=to_string(hop_list.size());
+                  //     message+=" ";
+                  //     for(int i=0;i<hop_list.size();i++){
+                  //       message+=hop_list[i];
+                  //       message+=" ";
+                  //     }
+
+                  //     send(target->getFD(), message.c_str(), message.length(), 0);
+                  //     break;
+
+                      
+                  // }
+                  // else{
+
+                    printf("%s: Message from %s to %s successfully received.\n",dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
+                    break;
+                  // }
                 }
 
                 // add to hop list
@@ -467,6 +533,7 @@ void * handle_single_sensor(void* arg){
         sensors[string(sensor_id)] = sen;
 
         string reachable = get_reachable_message("", x_pos, y_pos, range);
+        // printf("got %s\n", reachable.c_str());
 
 
         send(conn_fd, reachable.c_str(), reachable.length()-1,0);
