@@ -342,11 +342,19 @@ void * handle_single_sensor(void* arg){
               for(set<string>::iterator it = neighbors.begin(); it != neighbors.end(); it++){
 
                 // if the hop list doesn't contain THIS neighbor, get if its the closest
-                std::vector<string>::iterator to_jump_iterator = std::find(hop_list.begin(), hop_list.end(), *it);
+                std::vector<string>::iterator to_jump_iterator = std::find(hop_list.begin(), hop_list.end(), it->c_str());
 
                 // if that neighbor is not already in the hoplist
                 // reached end of hop list and couldn't find it
+
+                
                 if(to_jump_iterator == hop_list.end()){
+                // printf("now printing out contents of hop list\n");
+                // printf("looking at neighbor -- %s --, that neighbor is -- %s --\n", next->getID().c_str(), it->c_str());
+                // for(int i=0;i<hop_list.size();i++){
+                //   printf("---- %s\n", hop_list[i].c_str());
+                // }
+                  // printf("this is a unique hop\n");
 
                   // get dist
                   BaseStation* temp = &(base_stations[*(it)]);
@@ -368,6 +376,11 @@ void * handle_single_sensor(void* arg){
               for(map<string, Sensor>::iterator it = sensors.begin(); it!= sensors.end(); it++){
                 Sensor* temp = &(it->second);
 
+                
+                std::vector<string>::iterator to_jump_iterator = std::find(hop_list.begin(), hop_list.end(), it->first);
+
+                if(to_jump_iterator == hop_list.end()){
+
                 // make sure the sensor is reachable from base station to start
                 double distance_to_sensor_from_here = sqrt( pow( next->getX() - temp->getX(), 2) + pow( next->getY() -temp->getY(), 2));
                 if(distance_to_sensor_from_here > temp->getRange()){
@@ -382,12 +395,14 @@ void * handle_single_sensor(void* arg){
                     min_dist = distance;
                     min_hop = it->first;
                   }
+                }
+
                 
               }
 
               // now the closest hop is set
               if(min_hop == ""){
-                printf("handle no other base stations here\n");
+                printf("%s: Message from %s to %s could not be delivered.\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str());
                 break;
               }
 
@@ -428,6 +443,7 @@ void * handle_single_sensor(void* arg){
                   // }
                 }
 
+                // printf("going to %s\n", current->getID().c_str());
                 // add to hop list
                 next_id = current->getID();
 

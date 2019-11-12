@@ -147,6 +147,7 @@ int main(int argc, char **argv){
   //   cout<<it->getID() << " "<< it->getX()<<" " << it->getY()<<endl;
   // }
   
+
   fd_set readfds;
 
   while (true){
@@ -189,6 +190,7 @@ int main(int argc, char **argv){
         std::istringstream iss(line);
         string word;
 
+
         while(iss >> word){
           if(word == "SENDDATA"){
             // cout<<"we are sending"<<endl;
@@ -212,13 +214,19 @@ int main(int argc, char **argv){
             // TODO
             // pass the message to the next on the stop list
             else{
+
+              if(s.in_reach.size() == 0) {
+                printf("%s: Message from %s to %s could not be delivered.\n", s.getID(), s.getID(), dest_id.c_str());
+                break;
+              }
+
               bool found = false;
               double min_dist=1000000;
               const SensorBaseStation * closest;
               for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
 
                 if(it->getID() == dest_id){
-                  string data_message = "DATAMESSAGE " + string(s.getID()) + " " + dest_id + " "+ dest_id + " " + to_string(0) + " ";
+                  string data_message = "DATAMESSAGE " + string(s.getID()) + " " + dest_id + " "+ dest_id + " " + to_string(1) + " " + string(sensor_id);
                   printf("%s: Sent a new message bound for %s.\n", s.getID(), it->getID().c_str());
                   send(sock_fd, data_message.c_str(), data_message.length(),0);
                   
@@ -264,7 +272,7 @@ int main(int argc, char **argv){
                     min_dist = distance;
                   }
               }
-              string data_message = "DATAMESSAGE " + string(s.getID()) + " " + closest->getID()+ " "+ dest_id + " " + to_string(0) + " ";
+              string data_message = "DATAMESSAGE " + string(s.getID()) + " " + closest->getID()+ " "+ dest_id + " " + to_string(1) + " " + string(sensor_id);
                   printf("%s: Sent a new message bound for %s.\n", s.getID(), dest_id.c_str());
                   send(sock_fd, data_message.c_str(), data_message.length(),0);
               }
@@ -377,8 +385,10 @@ void receive_message(string buffer, string sensor_id, int sock_fd){
       hop_length+=1;
       hop_list.push_back(next_id);
 
+      // printf("printing hop list of %s\n", next_id.c_str());
       // for(int i=0;i<hop_list.size();i++){
-      //   cout<<hop_list[i]<<endl;
+      //   printf("%s\n", hop_list[i].c_str());
+      //   // cout<<hop_list[i]<<endl;
       // }
 
 
