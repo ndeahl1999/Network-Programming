@@ -15,6 +15,8 @@
 #include <strings.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <algorithm>
+#include <string>
 
 using std::cin;
 using std::cout;
