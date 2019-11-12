@@ -358,7 +358,7 @@ void receive_message(string buffer, string sensor_id, int sock_fd){
     // printf("got %s\n", buffer.c_str());
 
     if(dest_id == sensor_id){
-      printf("%s: Message from %s to %s succesfully received.\n", sensor_id.c_str(), origin_id.c_str(), dest_id.c_str());
+      printf("%s: Message from %s to %s successfully received.\n", sensor_id.c_str(), origin_id.c_str(), dest_id.c_str());
       return;
     }
     else{

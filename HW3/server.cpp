@@ -76,7 +76,7 @@ string get_coordinates(string target){
     // send(conn_fd, message.c_str(), message.length(),0);
   }
   else{
-    printf("couldnt' find\n");
+    printf("couldnt' find %s\n", target.c_str());
     return NULL;
   }
   return message;
