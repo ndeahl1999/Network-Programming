@@ -2,6 +2,7 @@
 #include <iostream>
 #include <stdlib.h>
 #include <set>
+#include <vector>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -48,7 +49,7 @@ void send_update_position(char* sensor_id, int sensor_range, int x_pos, int y_po
 // updateposition [sensorid] [sensorrange] [current x] [current y]
 // quit
 void handle_input(char* sensor_id, int sock_fd);
-void receive_message(string message, string sensor_id);
+void receive_message(string message, string sensor_id, int sock_fd);
 
 
 // spawn a new thread into this function
@@ -164,7 +165,8 @@ int main(int argc, char **argv){
       char buffer[1025];
       bzero(&buffer, 1025);
       int n = recv(sock_fd, buffer, 1025, 0);
-      receive_message(string(buffer), string(sensor_id));
+      receive_message(string(buffer), string(sensor_id), sock_fd);
+      
       //RECEIVE data and pass into function
     }
 
@@ -176,7 +178,7 @@ int main(int argc, char **argv){
       string id(sensor_id);
 
       //loop and keep handling messages
-      while(true){
+      // while(true){
 
         getline(cin, line);
         // temporary debug to make sure the server can get the message
@@ -334,9 +336,6 @@ int main(int argc, char **argv){
           }
         }
       }
-      
-    }
-
   }  
   
   printf("finished execution\n");
@@ -346,18 +345,117 @@ int main(int argc, char **argv){
 
 }
 
-void receive_message(string buffer, string sensor_id){
-  std::istringstream ss(buffer);
+void receive_message(string buffer, string sensor_id, int sock_fd){
+  std::istringstream iss(buffer);
 
   string message;
-  ss >> message;
+  iss >> message;
   if(message == "DATAMESSAGE"){
     string origin_id, next_id, dest_id;
-    ss >> origin_id >> next_id >> dest_id;
+    iss >> origin_id >> next_id >> dest_id;
+    // printf("got %s\n", buffer.c_str());
 
     if(dest_id == sensor_id){
       printf("%s: Message from %s to %s succesfully received.\n", sensor_id.c_str(), origin_id.c_str(), dest_id.c_str());
       return;
+    }
+    else{
+
+      printf("%s: Message from %s to %s being forwarded through %s\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
+      int hop_length;
+      std::vector<string> hop_list;
+      iss>>hop_length;
+      int i=0;
+      while(i<hop_length){
+        string hop;
+        iss>>hop;
+        hop_list.push_back(hop);
+        i++;
+      }
+      hop_length+=1;
+      hop_list.push_back(next_id);
+
+      // for(int i=0;i<hop_list.size();i++){
+      //   cout<<hop_list[i]<<endl;
+      // }
+
+
+
+      bool found = false;
+      double min_dist=1000000;
+      const SensorBaseStation * closest;
+
+
+      for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
+
+        // printf("can reach %s when supposed to go %s\n", it->getID().c_str(), dest_id.c_str());
+
+        if(it->getID() == dest_id){
+          // printf("---------- this comparison was true %s  ==  %s\n", it->getID().c_str(), dest_id.c_str());
+          string data_message = "DATAMESSAGE " + origin_id+ " " + it->getID() + " "+ dest_id + " " + to_string(hop_length);
+          for(int i=0;i<hop_list.size();i++){
+            data_message+=" ";
+            data_message+=hop_list[i];
+          }
+
+          // printf("got it -- %s\n", data_message.c_str());
+          // printf("%s: Sent a new message bound for %s.\n", s.getID(), it->getID().c_str());
+          send(sock_fd, data_message.c_str(), data_message.length(),0);
+          
+          found = true;
+        }
+      }
+
+      if(found == true){
+        return;
+      }
+
+
+      // send a where 
+      string message = "WHERE " + dest_id;
+      send(sock_fd, message.c_str(), message.length(),0);
+
+      // get a there back
+      char buffer[1025];
+      bzero(&buffer, 1025);
+      int n = recv(sock_fd, buffer, 1025, 0);
+
+      
+      // parse the there
+      std::istringstream there(buffer);
+      std::string word;
+      there >> word;
+      if(word != "THERE"){
+        perror("sux");
+        return;
+      }
+
+      int target_x;
+      int target_y;
+      there >> target_x >> target_y;
+
+
+      for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
+          double distance = sqrt( pow( it->getX() - target_x, 2) + pow(it->getY() - target_y, 2));
+          if(distance < min_dist){
+            closest = &(*it);
+            min_dist = distance;
+          }
+      }
+      string data_message = "DATAMESSAGE " + string(s.getID()) + " " + closest->getID()+ " "+ dest_id + " " + to_string(0) + " ";
+          printf("%s: Sent a new message bound for %s.\n", s.getID(), dest_id.c_str());
+          send(sock_fd, data_message.c_str(), data_message.length(),0);
+      
+
+
+
+
+
+
+      
+      // hop_length+=1;
+      // hop_list.push_back(next_id);
+       
     }
 
 

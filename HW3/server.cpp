@@ -233,13 +233,7 @@ void * handle_single_sensor(void* arg){
         hop_list.push_back(next_id);
 
 
-        // check here if it's a sensor, if it is, no need to go do below logic
-
-        
-
-        
-
-        // BaseStation *current = 
+        // check here if it's a sensor, if it is, no need to go do below logic    
 
               // this means the next one to handle the message is base station
         std::map<string, BaseStation>::iterator it = base_stations.find(next_id);
@@ -247,10 +241,11 @@ void * handle_single_sensor(void* arg){
 
 
         //   // if its a base station to handle
-          BaseStation *current = &(it->second);
+          BaseStation *next = &(it->second);
 
 
           Pair p = coordinates_of(dest_id);
+          // printf("got p %d %d\n", p.x, p.y);
         
 
 
@@ -261,13 +256,26 @@ void * handle_single_sensor(void* arg){
 
             // continue traversing base stations until end
             while(true){
+              
+
+              // std::map<string, BaseStation>::iterator itr = base_stations.find(current->getID());
+              //if a base station is next
+              // if(current->getID() == dest_id){
+
+                // BaseStation* current = &((base_stations.find(current->getID())->second));
 
               //add string for hop to current base station 
-              printf("%s: Message from %s to %s being forwarded through %s.\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
+              printf("%s: Message from %s to %s being forwarded through %s\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str(), next_id.c_str());
+
+                if(next->canConnect(dest_id)){
+                  printf("%s: Message from %s to %s successfully received.\n",dest_id.c_str(), origin_id.c_str(), dest_id.c_str());
+                  break;
+                }
+              // }
 
               double min_dist = 10000;
               string min_hop = "";
-              set<string> neighbors = current->getLinksList();
+              set<string> neighbors = next->getLinksList();
 
               // for all possible neighbors
               for(set<string>::iterator it = neighbors.begin(); it != neighbors.end(); it++){
@@ -281,7 +289,9 @@ void * handle_single_sensor(void* arg){
 
                   // get dist
                   BaseStation* temp = &(base_stations[*(it)]);
+                  // printf("now x:%d y:%d compared to x:%d y:%d\n", p.x, p.y, temp->getX(), temp->getY());
                   double distance = sqrt( pow( temp->getX() - p.x, 2) + pow(temp->getY() - p.y, 2));
+                  // printf("%s: got %f when comparing with %s\n", current->getID().c_str(), distance, it->c_str());
 
                   // set dist
                   if(distance < min_dist){
@@ -293,9 +303,19 @@ void * handle_single_sensor(void* arg){
                 
               }
 
+              // for all sensors
               for(map<string, Sensor>::iterator it = sensors.begin(); it!= sensors.end(); it++){
                 Sensor* temp = &(it->second);
+
+                // make sure the sensor is reachable from base station to start
+                double distance_to_sensor_from_here = sqrt( pow( next->getX() - temp->getX(), 2) + pow( next->getY() -temp->getY(), 2));
+                if(distance_to_sensor_from_here > temp->getRange()){
+                  // printf("this goes off now for %s  to %s because %f\n", temp->getID(), next_id.c_str(), distance_to_sensor_from_here);
+                  continue;
+                }
+                  // printf("now x:%d y:%d compared to x:%d y:%d\n", p.x, p.y, temp->getX(), temp->getY());
                 double distance = sqrt( pow( temp->getX() - p.x, 2) + pow(temp->getY() - p.y, 2));
+                  // printf("%s: got %f when comparing with %s\n", current->getID().c_str(), distance, it->second.getID());
 
                 if(distance < min_dist){
                     min_dist = distance;
@@ -310,6 +330,8 @@ void * handle_single_sensor(void* arg){
                 break;
               }
 
+              // printf("min_hop is %s\n", min_hop.c_str());
+
               std::map<string, BaseStation>::iterator it = base_stations.find(min_hop);
               //if a base station is next
               if(it != base_stations.end()){
@@ -323,15 +345,39 @@ void * handle_single_sensor(void* arg){
 
                 // add to hop list
                 next_id = current->getID();
+
+                std::map<string, BaseStation>::iterator it = base_stations.find(next_id);
+                // printf(" --- %s\n", next_id.c_str());
+                next = &(it->second);
                 hop_list.push_back(next_id);
               }
               // otherwise a sensor is next
               else{
                 Sensor* current = &((sensors.find(min_hop)->second));
 
+                next_id = current->getID();
+                // hop_list.push_back(next_id);
+
                 string message  = "DATAMESSAGE ";
+                message+=origin_id;
+                message+=" ";
+                message+=next_id;
+                message+=" ";
+                message+=dest_id;
+                message+=" ";
+                message+=to_string(hop_list.size());
+                message+=" ";
+                for(int i=0;i<hop_list.size();i++){
+                  message+=hop_list[i];
+                  message+=" ";
+                }
 
 
+
+
+                send(current->getFD(), message.c_str(), message.length(), 0);
+
+                break;
 
 
               }
@@ -525,6 +571,7 @@ int main(int argc, char ** argv){
       links_list.insert(temp);
       i++;
     } 
+    // printf("Base station %s with x:%d y%d\n", base_id.c_str(), x_pos, y_pos);
 
     BaseStation new_base_station(base_id, x_pos, y_pos, num_links, links_list);
 
