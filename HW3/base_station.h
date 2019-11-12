@@ -60,7 +60,6 @@ class SensorBaseStation{
 
   public:
     SensorBaseStation(string base_id, int xpos, int ypos);
-    ~SensorBaseStation();
 
     const string getID() const { return base_id; }
     const int getX() const { return xpos; }
@@ -84,9 +83,6 @@ SensorBaseStation::SensorBaseStation(string base_id, int xpos, int ypos){
   this->xpos = xpos;
   this->ypos = ypos;
   this->distance_from = 100;
-}
-SensorBaseStation::~SensorBaseStation(){
-
 }
 
 
