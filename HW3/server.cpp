@@ -150,10 +150,11 @@ string get_reachable_message(string id, int a_x, int a_y, int range){
     string temp = s->getID();
     // printf("%s, %d, %d, %d, %d\n", temp.c_str(), s->getX(), s->getY(), a_x, a_y);
 
-    if(temp == id){
+    if(entry.first == id){
       continue;
     }
     if(in_range(s->getX(), s->getY(), a_x, a_y, range)){
+    // printf("loop is --%s-- and getting reachable for is --%s--\n", entry.first.c_str(), id.c_str());
 
       
       reachable_list+=s->getID();
@@ -168,6 +169,8 @@ string get_reachable_message(string id, int a_x, int a_y, int range){
   reachable+=to_string(counter);
   reachable+=" ";
   reachable+=reachable_list;
+
+  // printf("final reachable is -- %s\n", reachable.c_str());
 
 
   return reachable;
@@ -532,7 +535,7 @@ void * handle_single_sensor(void* arg){
         // updating the map entry with a new Sensor
         sensors[string(sensor_id)] = sen;
 
-        string reachable = get_reachable_message("", x_pos, y_pos, range);
+        string reachable = get_reachable_message(sensor_id, x_pos, y_pos, range);
         // printf("got %s\n", reachable.c_str());
 
 
