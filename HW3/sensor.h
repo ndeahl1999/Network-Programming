@@ -17,6 +17,7 @@ class Sensor{
     const int getX() const { return this->x_pos; }
     const int getY() const { return this->y_pos; }
     const int getFD() const { return this->conn_fd; }
+    void new_neighbors() { this->in_reach.clear(); }
     void setX(int x) { this->x_pos = x; }
     void setY(int y) { this->y_pos = y; }
     void add_in_reach(const SensorBaseStation station);
