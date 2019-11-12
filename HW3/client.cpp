@@ -448,13 +448,23 @@ void receive_message(string buffer, string sensor_id, int sock_fd){
 
 
       for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
-          double distance = sqrt( pow( it->getX() - target_x, 2) + pow(it->getY() - target_y, 2));
-          if(distance < min_dist){
-            closest = &(*it);
-            min_dist = distance;
+
+          std::vector<string>::iterator itr = std::find(hop_list.begin(), hop_list.end(), it->getID());
+          if(itr == hop_list.end()){
+
+            double distance = sqrt( pow( it->getX() - target_x, 2) + pow(it->getY() - target_y, 2));
+            if(distance < min_dist){
+              closest = &(*it);
+              min_dist = distance;
+            }
           }
       }
-      string data_message = "DATAMESSAGE " + string(s.getID()) + " " + closest->getID()+ " "+ dest_id + " " + to_string(0) + " ";
+      string data_message = "DATAMESSAGE " + string(s.getID()) + " " + closest->getID()+ " "+ dest_id + " " + to_string(hop_list.size());
+      for(int i=0;i<hop_list.size();i++){
+        data_message+=" ";
+        data_message+=hop_list[i];
+      }
+          // printf("the closest is %s\n", closest->getID().c_str());
           printf("%s: Sent a new message bound for %s.\n", s.getID(), dest_id.c_str());
           send(sock_fd, data_message.c_str(), data_message.length(),0);
       
