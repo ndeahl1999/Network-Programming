@@ -47,12 +47,11 @@ void send_update_position(char* sensor_id, int sensor_range, int x_pos, int y_po
 // where [sensorid/baseid]
 // updateposition [sensorid] [sensorrange] [current x] [current y]
 // quit
-void receive_message(char* message, char* sensor_id, int sock_fd);
+void receive_message(char* message, char* sensor_id, int sock_fd, Sensor* s);
 
 
 // spawn a new thread into this function
 // will keep on doing a `recv` call for messages
-Sensor s;
 
 int main(int argc, char **argv){
 
@@ -69,7 +68,8 @@ int main(int argc, char **argv){
   int initial_y_position = atoi(argv[6]);
 
   // creating THIS sensor
-  s = Sensor(sensor_id, sensor_range, initial_x_position, initial_y_position);
+  
+  Sensor s(sensor_id, sensor_range, initial_x_position, initial_y_position);
 
 
   int sock_fd;
@@ -164,7 +164,7 @@ int main(int argc, char **argv){
       // char buffer[1025];
       bzero(&buffer, 1025);
       recv(sock_fd, buffer, 1025, 0);
-      receive_message(buffer, sensor_id, sock_fd);
+      receive_message(buffer, sensor_id, sock_fd, &s);
       
       //RECEIVE data and pass into function
     }
@@ -280,7 +280,7 @@ int main(int argc, char **argv){
             // printf("%s, %d, %d\n", s.getID(), s.getX(), s.getY());
             // TODO handle more gracefully
             // reset the set of reachable base stations to the sensor
-            s.in_reach = std::set<SensorBaseStation>();
+            // s.in_reach = std::set<SensorBaseStation>();
             // s.in_reach.clear();
             // get number of reachable
             // int num_reachable;
@@ -394,7 +394,7 @@ int main(int argc, char **argv){
 
 }
 
-void receive_message(char* buffer, char* sensor_id, int sock_fd){
+void receive_message(char* buffer, char* sensor_id, int sock_fd, Sensor* s){
   std::istringstream iss(buffer);
 
   string message;
@@ -433,7 +433,7 @@ void receive_message(char* buffer, char* sensor_id, int sock_fd){
       // send update position
       // TODO
       // send an update position command to the server
-      send_update_position(sensor_id, s.getRange(), s.getX(), s.getY(), sock_fd);
+      send_update_position(sensor_id, s->getRange(), s->getX(), s->getY(), sock_fd);
 
       // receive new list of reachable
       char buffer[1025];
@@ -452,7 +452,7 @@ void receive_message(char* buffer, char* sensor_id, int sock_fd){
 
       // TODO handle more gracefully
       // reset the set of reachable base stations to the sensor
-      s.in_reach = std::set<SensorBaseStation>();
+      s->in_reach = std::set<SensorBaseStation>();
       // get number of reachable
       int num_reachable;
       reach >> num_reachable;
@@ -466,7 +466,7 @@ void receive_message(char* buffer, char* sensor_id, int sock_fd){
         SensorBaseStation temp(id, x, y);
 
         // add it to the sensor
-        s.add_in_reach(temp);
+        s->add_in_reach(temp);
       }
 
       // for(int i=0;i<hop_list.size();i++){
@@ -477,7 +477,7 @@ void receive_message(char* buffer, char* sensor_id, int sock_fd){
       bool found = false;
 
       // for every possible connection
-      for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
+      for(std::set<SensorBaseStation>::iterator it = s->in_reach.begin(); it != s->in_reach.end();it++){
 
         printf("can reach %s when supposed to go %s\n", it->getID().c_str(), dest_id.c_str());
 
@@ -538,7 +538,7 @@ void receive_message(char* buffer, char* sensor_id, int sock_fd){
       const SensorBaseStation * closest;
 
       // for all neighbors, get closest
-      for(std::set<SensorBaseStation>::iterator it = s.in_reach.begin(); it != s.in_reach.end();it++){
+      for(std::set<SensorBaseStation>::iterator it = s->in_reach.begin(); it != s->in_reach.end();it++){
 
           printf("comparing comparing %s x:%d y:%d to  looping %s x:%d y:%d\n", next_id.c_str(), target_x, target_y, it->getID().c_str(), it->getX(), it->getY());
           double distance = sqrt( pow( it->getX() - target_x, 2) + pow(it->getY() - target_y, 2));
@@ -547,8 +547,8 @@ void receive_message(char* buffer, char* sensor_id, int sock_fd){
             min_dist = distance;
           }
       }
-      string data_message = "DATAMESSAGE " + string(s.getID()) + " " + closest->getID()+ " "+ dest_id + " " + to_string(0) + " ";
-          printf("%s: Sent a new message bound for %s.\n", s.getID(), dest_id.c_str());
+      string data_message = "DATAMESSAGE " + string(s->getID()) + " " + closest->getID()+ " "+ dest_id + " " + to_string(0) + " ";
+          printf("%s: Sent a new message bound for %s.\n", s->getID(), dest_id.c_str());
           send(sock_fd, data_message.c_str(), data_message.length(),0);
        
     }
