@@ -128,16 +128,20 @@ string get_reachable_message(string id, int a_x, int a_y, int range){
       counter++;
     }
   }
+
+  // check to find what sensors are in range
   for(std::pair<string, Sensor> entry: sensors){
     Sensor *s = &(entry.second);
 
     string temp = s->getID();
 
+    // if self, ignore it
     if(entry.first == id){
       continue;
     }
-    if(in_range(s->getX(), s->getY(), a_x, a_y, range)){
 
+    //  add node to reachable list
+    if(in_range(s->getX(), s->getY(), a_x, a_y, range)){
       reachable_list+=s->getID();
       reachable_list+= " ";
       reachable_list+=to_string(s->getX());
@@ -157,10 +161,10 @@ string get_reachable_message(string id, int a_x, int a_y, int range){
 void * handle_single_sensor(void* arg){
   char*ID = (char *) arg;
 
+  // get this sensor to work with
   Sensor s = sensors.find(string(ID))->second;
   int conn_fd = s.getFD();
   string reachable = get_reachable_message(s.getID(), s.getX(), s.getY(), s.getRange());
-
 
   send(conn_fd, reachable.c_str(), reachable.length(),0);
 
@@ -218,8 +222,10 @@ void * handle_single_sensor(void* arg){
         printf("%s: Message from %s to %s successfully received.\n", dest_id.c_str(), origin_id.c_str(), next_id.c_str());  
 
       }else{
+
         iss>>hop_length;
         int i = 0;
+
         //read string for each hop already done. 
         while(i < hop_length){
           string hop;
@@ -286,8 +292,6 @@ void * handle_single_sensor(void* arg){
 
             // if that neighbor is not already in the hoplist
             // reached end of hop list and couldn't find it
-
-            
             if(to_jump_iterator == hop_list.end()){
 
               // get dist
@@ -308,19 +312,19 @@ void * handle_single_sensor(void* arg){
           for(map<string, Sensor>::iterator it = sensors.begin(); it!= sensors.end(); it++){
             Sensor* temp = &(it->second);
 
-            
+            // find the potential jump
             std::vector<string>::iterator to_jump_iterator = std::find(hop_list.begin(), hop_list.end(), it->first);
 
             if(to_jump_iterator == hop_list.end()){
 
-            // make sure the sensor is reachable from base station to start
-            double distance_to_sensor_from_here = sqrt( pow( next->getX() - temp->getX(), 2) + pow( next->getY() -temp->getY(), 2));
-            if(distance_to_sensor_from_here > temp->getRange()){
-              continue;
-            }
-            double distance = sqrt( pow( temp->getX() - p.x, 2) + pow(temp->getY() - p.y, 2));
+              // make sure the sensor is reachable from base station to start
+              double distance_to_sensor_from_here = sqrt( pow( next->getX() - temp->getX(), 2) + pow( next->getY() -temp->getY(), 2));
+              if(distance_to_sensor_from_here > temp->getRange()){
+                continue;
+              }
+              double distance = sqrt(pow(temp->getX() - p.x, 2) + pow(temp->getY() - p.y, 2));
 
-            if(distance < min_dist){
+              if(distance < min_dist){
                 min_dist = distance;
                 min_hop = it->first;
               }
@@ -334,7 +338,6 @@ void * handle_single_sensor(void* arg){
             printf("%s: Message from %s to %s could not be delivered.\n", next_id.c_str(), origin_id.c_str(), dest_id.c_str());
             break;
           }
-
 
           std::map<string, BaseStation>::iterator it = base_stations.find(min_hop);
           //if a base station is next
