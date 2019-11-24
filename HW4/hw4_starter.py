@@ -21,9 +21,11 @@ def run():
     Note that every stub needs a channel attached to it
     When you are done with a channel you should call .close() on the channel.
     Submitty may kill your program if you have too many file descriptors open
-    at the same time. '''
-    #remote_addr = socket.gethostbyname(remote_addr_string)
-    #remote_port = int(remote_port_string)
-    #channel = grpc.insecure_channel(remote_addr + ':' + str(remote_port))
+    at the same time.'''
+    # remote_addr = socket.gethostbyname(remote_addr_string)
+    # remote_port = int(remote_port_string)
+    # channel = grpc.insecure_channel(remote_addr + ':' + str(remote_port))
+
+
 if __name__ == '__main__':
     run()
