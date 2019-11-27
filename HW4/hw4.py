@@ -9,6 +9,7 @@ import csci4220_hw4_pb2
 import csci4220_hw4_pb2_grpc
 
 
+
 class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
     def First(self, request, context):
@@ -30,15 +31,32 @@ def run():
     Submitty may kill your program if you have too many file descriptors open
     at the same time.'''
 
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    csci4220_hw4_pb2_grpc.add_KadImplServicer_to_server(HashTable(), server)
-    server.add_insecure_port('[::]:50051')
-    server.start()
-    server.wait_for_termination()
+    # server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    # csci4220_hw4_pb2_grpc.add_KadImplServicer_to_server(HashTable(), server)
+    # server.add_insecure_port('[::]:50051')
+    # server.start()
+    # server.wait_for_termination()
     # remote_addr = socket.gethostbyname(remote_addr_string)
     # remote_port = int(remote_port_string)
     # channel = grpc.insecure_channel(remote_addr + ':' + str(remote_port))
 
+    buckets = pow(2, k)
+    k_buckets = [None] * 4
+    print(k_buckets)
+
+    while (True):
+        stdin = str(input())
+        arguments = stdin.split(" ")
+        if (arguments[0] == "BOOTSTRAP"):
+            print("handle bootstrapping here")
+        if (arguments[0] == "STORE"):
+            print("handle store here")
+        if (arguments[0] == "FIND_VALUE"):
+            print("handle find_value here")
+        if (arguments[0] == "QUIT"):
+            print("handle quit here")
+
+    
 
 if __name__ == '__main__':
     run()
