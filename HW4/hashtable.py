@@ -7,7 +7,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     my_port = -1
     my_id = 1
     my_address = ""
-    
 
     
     def PrintBuckets(self):
@@ -33,6 +32,9 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     def FindNode(self, request, context):
         print("harcoded the return values")
         # print(request.node)
+        to_add = request.node
+
+        
         toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=
         [
             # csci4220_hw4_pb2.Node(id=1, port=1234, address="address")

@@ -33,8 +33,6 @@ def run():
     at the same time.'''
 
     # server.wait_for_termination()
-    # remote_addr = socket.gethostbyname(remote_addr_string)
-    # remote_port = int(remote_port_string)
     # channel = grpc.insecure_channel(remote_addr + ':' + str(remote_port))
 
 
@@ -63,22 +61,23 @@ def run():
         arguments = stdin.split(" ")
         # connect to another peer
         if (arguments[0] == "BOOTSTRAP"):
-            peer_id = arguments[1]
+            peer_host = arguments[1]
             peer_port = arguments[2]
             print("handle bootstrapping here")
 
             # temporarily connect with them to get 
-            with grpc.insecure_channel('localhost:'+peer_port) as channel:
+            with grpc.insecure_channel(peer_host+":"+peer_port) as channel:
                 stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
                 obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=local_id, port=int(my_port), address="localhost"), idkey=local_id)
                 
                 # node contains the return from FindNode
                 node = stub.FindNode(obj)
 
+                # get the bucket it should be stored in
                 bucket = hash_table.my_id ^ node.responding_node.id
                 bucket = bucket.bit_length() - 1
                 
-                hash_table.k_buckets[bucket].append("testing")
+                hash_table.k_buckets[bucket].insert(0,str(node.responding_node.id)+":"+str(node.responding_node.port))
                 # bootstrapped = node.responding_node
                 
 
