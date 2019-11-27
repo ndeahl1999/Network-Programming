@@ -37,18 +37,25 @@ def run():
     # remote_port = int(remote_port_string)
     # channel = grpc.insecure_channel(remote_addr + ':' + str(remote_port))
 
+
     # start the server in the background
+
+    
+    hash_table = HashTable()
+    hash_table.my_port = int(my_port)
+    hash_table.my_id = local_id
+    hash_table.my_address = my_address
+
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    csci4220_hw4_pb2_grpc.add_KadImplServicer_to_server(HashTable(), server)
+    csci4220_hw4_pb2_grpc.add_KadImplServicer_to_server(hash_table, server)
     server.add_insecure_port('[::]:'+my_port)
     server.start()
 
-    
-
     # initializing the buckets 2^k
     buckets = pow(2, k)
-    k_buckets = [None] * 4
-
+    for i in range(buckets):
+        hash_table.k_buckets[i] = []
+    
 
     # main listening loop
     while (True):
@@ -63,10 +70,21 @@ def run():
             # temporarily connect with them to get 
             with grpc.insecure_channel('localhost:'+peer_port) as channel:
                 stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
-                obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=local_id, port=int(my_port),address="localhost"), idkey=local_id)
+                obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=local_id, port=int(my_port), address="localhost"), idkey=local_id)
+                
+                # node contains the return from FindNode
                 node = stub.FindNode(obj)
-                print("we got")
-                print(node)
+
+                bucket = hash_table.my_id ^ node.responding_node.id
+                bucket = bucket.bit_length() - 1
+                
+                hash_table.k_buckets[bucket].append("testing")
+                # bootstrapped = node.responding_node
+                
+
+            
+            print("After BOOTSTRAP(" + str(node.responding_node.id) + "), k_buckets now look like:")
+            hash_table.PrintBuckets()
                 # print(node.responding_node.port)
 
         if (arguments[0] == "STORE"):
