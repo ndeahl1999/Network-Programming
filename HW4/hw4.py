@@ -9,22 +9,13 @@ import csci4220_hw4_pb2
 import csci4220_hw4_pb2_grpc
 
 
+'''
+The file with the implementation for the homework server
+Split into a separate file for readability
+'''
+from hashtable import *
 
-class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
-    def First(self, request, context):
-        print("gottem")
-        pass
-
-
-    '''
-
-    This should return a NodeList object
-
-    '''
-    def FindNode(self, request, context):
-        print("implemented")
-        return 1
 
 def run():
     if len(sys.argv) != 4:
