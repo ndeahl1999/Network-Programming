@@ -63,10 +63,11 @@ def run():
         if (arguments[0] == "BOOTSTRAP"):
             peer_host = arguments[1]
             peer_port = arguments[2]
-            print("handle bootstrapping here")
 
             # temporarily connect with them to get 
-            with grpc.insecure_channel(peer_host+":"+peer_port) as channel:
+            with grpc.insecure_channel(peer_host + ":" + peer_port) as channel:
+                
+                # access the remote server
                 stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
                 obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=local_id, port=int(my_port), address="localhost"), idkey=local_id)
                 

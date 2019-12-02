@@ -7,6 +7,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     my_port = -1
     my_id = 1
     my_address = ""
+    data = {}
 
     
     def PrintBuckets(self):
@@ -30,15 +31,35 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
     '''
     def FindNode(self, request, context):
-        print("harcoded the return values")
         # print(request.node)
         to_add = request.node
+        request_id = request.idkey
+        print("Serving FindNode("+str(to_add.id) + ") request for " + str(request_id))
 
         
         toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=
         [
             # csci4220_hw4_pb2.Node(id=1, port=1234, address="address")
         ])
+
+        '''
+         while some of the k closest have not been asked
+           S = the k closest ID to <nodeID>
+           S' = nodes in S not yet contacted
+           for node in S':
+               R = node.FindNode(<nodeID>)
+
+               update k-buckets with node
+
+               if node in R was already in a k-bucket, position does not chnage
+               if it was not in the bucket yet, added as most recently used in that bucket
+               may kick out node from above
+
+               update k-buckets with all nodes in R
+
+            if <nodeID> has been found, stop
+           
+        '''
         return toReturn
 
     '''
@@ -57,7 +78,12 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
     '''
     def Store(self, request, context):
-        pass
+        k = request.key
+        v = request.value
+        data[k] = v
+        for k, v in self.data.items():
+            print(str(k) + " " + str(v))
+        # pass
 
     '''
 
