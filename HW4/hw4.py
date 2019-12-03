@@ -100,7 +100,17 @@ def run():
             print("handle store here")
         if (arguments[0] == "FIND_NODE"):
             target_id = int(arguments[1])
-            
+            print("Before FIND_NODE command, k-buckets are:")
+            hash_table.PrintBuckets()
+
+
+            # perform searching and updating here
+            hash_table.SendFindNode(target_id)
+
+            print("After FIND_NODE command, k-buckets are:")
+            hash_table.PrintBuckets()
+
+
 
 
 

@@ -21,7 +21,14 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             print(str(item[0]) + ":" + peers)
 
     def SendFindNode(self, target_id):
-        pass
+        obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address="localhost"),
+        idkey=target_id)
+        for item in self.k_buckets.items():
+            for peer in item[1]:
+                with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
+                    stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
+                    node = stub.FindNode(obj)
+                    print(node)
 
 
 
@@ -63,11 +70,15 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
             return toReturn
         else:
+            toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=
+            [
+                # csci4220_hw4_pb2.Node(id=1, port=1234, address="address")
+            ])
             for item in self.k_buckets.items():
                 for peer in item[1]:
                     with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
                         stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
-                        print("got this far")
+                        print("TODO make requests to all peers")
 
 
             return toReturn
