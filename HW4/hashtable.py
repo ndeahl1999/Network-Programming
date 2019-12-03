@@ -1,8 +1,10 @@
 import csci4220_hw4_pb2
 import csci4220_hw4_pb2_grpc
-
+import grpc
+from node import *
 class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
+    peers=[]
     k_buckets = {}
     my_port = -1
     my_id = 1
@@ -12,8 +14,16 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     
     def PrintBuckets(self):
         for item in self.k_buckets.items():
-            peer_id = ' '.join(item[1])
-            print(str(item[0])+": "+peer_id)
+            peers = ""
+            for peer in item[1]:
+                peers = peers + " "
+                peers = peers + str(peer.node_id) + ":" + str(peer.port)
+            print(str(item[0]) + ":" + peers)
+
+    def SendFindNode(self, target_id):
+        pass
+
+
 
     '''
     This should return a NodeList object
@@ -36,11 +46,36 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         request_id = request.idkey
         print("Serving FindNode("+str(to_add.id) + ") request for " + str(request_id))
 
+        # handle bootstrap call
+        if (to_add.id == request_id):
+
+            # get the bucket
+            bucket = self.my_id ^ to_add.id
+            bucket = bucket.bit_length() - 1
+
+            n = Node(to_add.address, to_add.port, to_add.id)
+            self.k_buckets[bucket].insert(0, n)
+
+            toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=
+            [
+                # csci4220_hw4_pb2.Node(id=1, port=1234, address="address")
+            ])
+
+            return toReturn
+        else:
+            for item in self.k_buckets.items():
+                for peer in item[1]:
+                    with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
+                        stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
+                        print("got this far")
+
+
+            return toReturn
+
         
-        toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=
-        [
-            # csci4220_hw4_pb2.Node(id=1, port=1234, address="address")
-        ])
+
+        
+        
 
         '''
          while some of the k closest have not been asked
@@ -60,6 +95,14 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             if <nodeID> has been found, stop
            
         '''
+
+        visited = []
+        # while 
+
+        # for k, v in self.k_buckets.items():
+
+
+        
         return toReturn
 
     '''

@@ -15,6 +15,8 @@ Split into a separate file for readability
 '''
 from hashtable import *
 
+from node import *
+
 
 
 def run():
@@ -78,17 +80,31 @@ def run():
                 bucket = hash_table.my_id ^ node.responding_node.id
                 bucket = bucket.bit_length() - 1
                 
-                hash_table.k_buckets[bucket].insert(0,str(node.responding_node.id)+":"+str(node.responding_node.port))
+
+
+                n = Node(node.responding_node.address, node.responding_node.port, node.responding_node.id)
+                # hash_table.peers.append(n)
+                hash_table.k_buckets[bucket].insert(0,n)
                 # bootstrapped = node.responding_node
                 
 
             
             print("After BOOTSTRAP(" + str(node.responding_node.id) + "), k_buckets now look like:")
             hash_table.PrintBuckets()
+
+            # for i in range(len(hash_table.peers)):
+            #     print(hash_table.peers[i])
                 # print(node.responding_node.port)
 
         if (arguments[0] == "STORE"):
             print("handle store here")
+        if (arguments[0] == "FIND_NODE"):
+            target_id = int(arguments[1])
+            
+
+
+
+
         if (arguments[0] == "FIND_VALUE"):
             print("handle find_value here")
         if (arguments[0] == "QUIT"):
