@@ -30,7 +30,8 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
                     node = stub.FindNode(obj)
                     print(node)
 
-
+    def sendQuit(self):
+        pass
 
     '''
     This should return a NodeList object

@@ -118,8 +118,9 @@ def run():
         if (arguments[0] == "FIND_VALUE"):
             print("handle find_value here")
         if (arguments[0] == "QUIT"):
-            print("handle quit here")
-
+            hash_table.sendQuit()
+            print("Shut down node " + str(local_id) +"\n")
+            break
 
     
 
