@@ -75,11 +75,22 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             [
                 # csci4220_hw4_pb2.Node(id=1, port=1234, address="address")
             ])
+            obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address="localhost"),
+            idkey=request_id)
+
+            # for all buckets
             for item in self.k_buckets.items():
+
+                # for all peers
                 for peer in item[1]:
+
+                    # connect to the channel
                     with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
                         stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
-                        print("TODO make requests to all peers")
+
+                        node = stub.FindNode(obj)
+                        print("making requests to all peers:")
+                        print(node)
 
 
             return toReturn
