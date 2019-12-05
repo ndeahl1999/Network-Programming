@@ -21,33 +21,49 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             print(str(item[0]) + ":" + peers)
 
     def SendFindNode(self, target_id):
-        obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address="localhost"),
+        obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address=self.my_address),
         idkey=target_id)
+        counter = 2
         for item in self.k_buckets.items():
             for peer in item[1]:
+                if counter == 0:
+                    return
+                counter = counter-1
+
+                # send the peer the find node command
                 with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
                     stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
                     node = stub.FindNode(obj)
                     
-                    # print(node.nodes)
                     for i in node.nodes:
                         bucket = self.my_id ^ i.id
                         bucket = bucket.bit_length() - 1
 
-                        # print(str(self.my_id) + "  " + str(i.id))
-
-                        # print(bucket)
                         found = False
+
+                        # it's -1 for itself, ignore self
                         if bucket >= 0:
                             for matches in self.k_buckets[bucket]:
                                 if matches.node_id == i.id:
                                     found=True
-                                    # print("found a match")
 
+                            # if not contained in that bucket
+                            # add it
                             if found == False:
-                                self.k_buckets[bucket].append(Node(i.address, i.port, i.id))
+                                self.k_buckets[bucket].insert(0,Node(i.address, i.port, i.id))
 
 
+    def SendFindValue(self, target_key):
+        print("doing find value")
+        obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address=self.my_address), idkey=target_key)
+        for item in self.k_buckets.items():
+            for peer in item[1]:
+                with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
+                    stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
+                    node = stub.FindValue(obj)
+
+                    print("the results are vvvvvvvvvv")
+                    print(node)
     def sendQuit(self):
         pass
 
@@ -105,6 +121,8 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
                     responding.append(csci4220_hw4_pb2.Node(id=peer.node_id, port=peer.port, address=peer.address))
 
 
+            # create the return object
+            # using the array as the nodelist
             toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=
             responding)
             # print(responding)
@@ -162,7 +180,20 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
     '''
     def FindValue(self, request, context):
-        pass
+        node = request.node # node object (id, port, address)
+        key = request.idkey  # int
+        
+        self_node = csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address)
+        
+        #toReturn = csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=True, kv=csci4220_hw4_pb2.KeyValue(node=self_node,key=,value=) nodes=[]))
+        if key in self.data:
+            return csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=True, kv=csci4220_hw4_pb2.KeyValue(node=self_node,key=key,value=self.data[key]), nodes=[])
+        else:
+            return csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=False, kv=csci4220_hw4_pb2.KeyValue(node=self_node, key=key, value="None"), nodes=[
+                # do stuff here in the nodes array
+            ])
+        
+
 
 
     '''
@@ -174,9 +205,15 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     def Store(self, request, context):
         k = request.key
         v = request.value
-        data[k] = v
-        for k, v in self.data.items():
-            print(str(k) + " " + str(v))
+        print("Storing key " + str(k) + " value \"" + str(v) + "\"")
+        self.data[k] = v
+
+        toReturn = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), idkey=self.my_id)
+
+        return toReturn
+        # for k, v in self.data.items():
+        #     print(str(k) + " " + str(v))
+
         # pass
 
     '''

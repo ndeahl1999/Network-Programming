@@ -71,7 +71,7 @@ def run():
                 
                 # access the remote server
                 stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
-                obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=local_id, port=int(my_port), address="localhost"), idkey=local_id)
+                obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=hash_table.my_id, port=int(hash_table.my_port), address=hash_table.my_address), idkey=local_id)
                 
                 # node contains the return from FindNode
                 node = stub.FindNode(obj)
@@ -97,7 +97,41 @@ def run():
                 # print(node.responding_node.port)
 
         if (arguments[0] == "STORE"):
-            print("handle store here")
+            key = int(arguments[1])
+            value = arguments[2]
+            min_dist = key ^ hash_table.my_id
+            min_key = Node(hash_table.my_address, hash_table.my_port, hash_table.my_id)
+
+            # get the minimum distance peer to the key
+            for item in hash_table.k_buckets.items():
+                for peer in item[1]:
+                    dist = key ^ peer.node_id
+                    if dist < min_dist:
+                        min_dist = dist
+                        min_key = peer
+            
+            print("Storing key " + str(key) + " at node " + str(min_key.node_id))
+            if (min_key.node_id == hash_table.my_id):
+                print("store this is self")
+            else:
+                # send the store command to that remote
+                with grpc.insecure_channel(min_key.address + ":" + str(min_key.port)) as channel:
+                    stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
+                    obj = csci4220_hw4_pb2.KeyValue(node=csci4220_hw4_pb2.Node(id=hash_table.my_id, port=int(hash_table.my_port), address=hash_table.my_address), key=key, value=value)
+                    
+                    id_key = stub.Store(obj)
+
+
+                    
+
+
+            
+
+            # now we have the peer to send it to
+
+                
+
+
         if (arguments[0] == "FIND_NODE"):
             target_id = int(arguments[1])
             print("Before FIND_NODE command, k-buckets are:")
@@ -116,7 +150,18 @@ def run():
 
 
         if (arguments[0] == "FIND_VALUE"):
-            print("handle find_value here")
+            find_target = int(arguments[1])
+
+            print("Before FIND_VALUE command, k-buckets are:")
+            hash_table.PrintBuckets()
+
+            hash_table.SendFindValue(find_target)
+
+
+            print("After FIND_VALUE command, k-buckets are:")
+            hash_table.PrintBuckets()
+
+
         if (arguments[0] == "QUIT"):
             hash_table.sendQuit()
             print("Shut down node " + str(local_id) +"\n")
