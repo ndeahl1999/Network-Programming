@@ -8,14 +8,14 @@ import grpc
 import csci4220_hw4_pb2
 import csci4220_hw4_pb2_grpc
 
+from hashtable import *
+
+from node import *
 
 '''
 The file with the implementation for the homework server
 Split into a separate file for readability
 '''
-from hashtable import *
-
-from node import *
 
 
 
