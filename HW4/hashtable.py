@@ -50,22 +50,70 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
                             # if not contained in that bucket
                             # add it
                             if found == False:
-                                self.k_buckets[bucket].insert(0,Node(i.address, i.port, i.id))
+                                self.UpdateBucket(bucket,Node(i.address, i.port, i.id))
+                                # self.k_buckets[bucket].insert(0,Node(i.address, i.port, i.id))
 
 
+    '''
+
+    Helper function to create FindValue request to peers
+
+    '''
     def SendFindValue(self, target_key):
-        print("doing find value")
         obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address=self.my_address), idkey=target_key)
+
+        # for all peers
         for item in self.k_buckets.items():
             for peer in item[1]:
                 with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
+
+                    # send find value command
                     stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
                     node = stub.FindValue(obj)
+                    
+                    # if found
+                    if (node.mode_kv == True):
+                        print("Found value \"" + node.kv.value + "\" for key " + str(node.kv.key))
 
-                    print("the results are vvvvvvvvvv")
-                    print(node)
-    def sendQuit(self):
+
+    def SendQuit(self):
         pass
+
+
+    '''
+
+
+    bucket_no: int
+    new_node: Node
+
+    '''
+    def UpdateBucket(self, bucket_no, new_node):
+        bucket = self.k_buckets[bucket_no]
+        
+        index = -1
+        # seeing if the new node is already in the k buckets
+        for i in range(len(bucket)):
+            if bucket[i].node_id == new_node.node_id:
+                index = i
+
+        # remove it, and add it back to the beginning
+        if index != -1:
+            bucket = bucket[index + 1 : index - 1]
+            print(bucket)
+            bucket.insert(0, new_node)
+            #self.k_buckets[bucket_no] = bucket
+            return
+        # if it's not in there
+        else:
+
+            #check size of array
+            if len(bucket) >= 2:
+                del bucket[1]
+            
+            bucket.insert(0, new_node)
+            return
+
+    
 
     '''
     This should return a NodeList object
@@ -106,8 +154,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             return toReturn
         else:
             
-            # obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address="localhost"),
-            # idkey=request_id)
 
             responding = []
 
@@ -125,19 +171,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             # using the array as the nodelist
             toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=
             responding)
-            # print(responding)
-
-
-                    
-
-                    # connect to the channel
-                    # with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
-                    #     stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
-
-                    #     # node = stub.FindNode(obj)
-                    #     print("making requests to all not already asked peers here")
-                        # print(node)
-
 
             return toReturn
 
@@ -166,9 +199,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         '''
 
         visited = []
-        # while 
 
-        # for k, v in self.k_buckets.items():
 
 
         
@@ -176,12 +207,15 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
     '''
 
+    Should return a KV_Node_Wrapper
 
 
     '''
     def FindValue(self, request, context):
         node = request.node # node object (id, port, address)
         key = request.idkey  # int
+
+        print("Serving FindKey("+str(key)+") request for " + str(node.id))
         
         self_node = csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address)
         
@@ -211,10 +245,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         toReturn = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), idkey=self.my_id)
 
         return toReturn
-        # for k, v in self.data.items():
-        #     print(str(k) + " " + str(v))
-
-        # pass
 
     '''
 

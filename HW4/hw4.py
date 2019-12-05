@@ -163,7 +163,7 @@ def run():
 
 
         if (arguments[0] == "QUIT"):
-            hash_table.sendQuit()
+            hash_table.SendQuit()
             print("Shut down node " + str(local_id) +"\n")
             break
 
