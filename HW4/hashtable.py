@@ -34,7 +34,9 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
                 with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
                     stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
                     node = stub.FindNode(obj)
-                    
+                    # print("getting -----")
+                    # print(node)
+                    # print("getting -----")
                     for i in node.nodes:
                         bucket = self.my_id ^ i.id
                         bucket = bucket.bit_length() - 1
@@ -93,14 +95,22 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         index = -1
         # seeing if the new node is already in the k buckets
         for i in range(len(bucket)):
+            # print("current is " + str(bucket[i].node_id))
+            # print("compared with " + str(new_node.node_id))
             if bucket[i].node_id == new_node.node_id:
                 index = i
 
+        # print("index is " + str(index))
         # remove it, and add it back to the beginning
         if index != -1:
-            bucket = bucket[index + 1 : index - 1]
-            print(bucket)
+            # print("updating bucket")
+            # print(bucket)
+            del bucket[index]
+            # print(bucket)
+            # bucket = bucket[index + 1 : index - 1]
+            # print(bucket)
             bucket.insert(0, new_node)
+            # print(bucket)
             #self.k_buckets[bucket_no] = bucket
             return
         # if it's not in there
@@ -233,23 +243,79 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     '''
 
 
+        The node should send a Store RPC to the single node that has ID closest to the key. Keep in mind that
+        the current node may be the closest node and may need to store the key/value pair locally. For simplicty,
+        values will never have spaces in them, but may be otherwise-arbitrary strings.
+        When calling the Store RPC, the requester should print:
+        Storing key <key> at node <remoteID>
+        If a node receives a call to Store, it should print:
+        Storing key <key> value "<value>"
+        (update 12/5): When receiving a store RPC the node receiving the call should locally store the key/value
+        pair. It should also update its own k-buckets by adding/updating the requester’s ID to be the most recently
+        used
 
+        its basically done
+        just need update buckets
+
+        true
 
     '''
     def Store(self, request, context):
+        node = request.node
         k = request.key
         v = request.value
         print("Storing key " + str(k) + " value \"" + str(v) + "\"")
         self.data[k] = v
 
         toReturn = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), idkey=self.my_id)
+        bucket = self.my_id ^ node.id
+        bucket = bucket.bit_length() - 1
 
+        found = False
+        # check to make sure that peer exists
+        for item in self.k_buckets[bucket]:
+            if item.node_id == node.id:
+                found = True
+        
+        # if found, update it
+        if found == True:
+            print("Found")
+            self.UpdateBucket(bucket, Node(node.address,node.port,node.id))
+        else:
+            print("not found")
+
+    
         return toReturn
 
     '''
-
+        The node should send a Quit RPC to each node that is in its k-buckets. Before making a call to node
+        <remoteID>, the node should print:
+        Letting <remoteID> know I'm quitting.
+        If a node receives a call to Quit from <remoteID>, and the remote node is in k-bucket , the entry should be
+        removed from the k-bucket and the following printed:
+        Evicting quitting node <remoteID> from bucket <i>
+        Otherwise the node should print the following:
+        No record of quitting node <remoteID> in k-buckets.
+        Finally, the node should print the following message to stdout, where <ID> is its ID, and then terminate:
+        Shut down node <ID>
 
 
     '''
     def Quit(self, request, context):
-        pass
+        node = request.node
+        node_id = request.idkey
+
+        bucket , index = -1
+        for item in self.k_buckets.items():
+            for i in range(item[1]):
+                if item[1][i].node_id == node_id:
+                    bucket = item[0][i]
+                    index = i
+
+        if index != -1:
+            print("Evicting quitting node " + str(node_id) + " from bucket " + bucket)
+            del k_buckets[bucket][index]
+        else:
+            print("No record of quitting node " + str(node_id) + "in k-buckets.")
+        
+        return request
