@@ -25,35 +25,43 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         idkey=target_id)
         counter = 2
         for item in self.k_buckets.items():
-            for peer in item[1]:
+            bucket = item[1]
+            for index in range(len(bucket)):
+
                 if counter == 0:
                     return
                 counter = counter-1
 
                 # send the peer the find node command
-                with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
+                with grpc.insecure_channel(bucket[index].address + ":" + str(bucket[index].port)) as channel:
+                    # print("we are sending to port " + str(bucket[index].port))
                     stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
-                    node = stub.FindNode(obj)
-                    # print("getting -----")
-                    # print(node)
-                    # print("getting -----")
-                    for i in node.nodes:
-                        bucket = self.my_id ^ i.id
-                        bucket = bucket.bit_length() - 1
+                    R = stub.FindNode(obj)
 
-                        found = False
+                    self.UpdateBucket(item[0],bucket[index])
 
-                        # it's -1 for itself, ignore self
-                        if bucket >= 0:
-                            for matches in self.k_buckets[bucket]:
-                                if matches.node_id == i.id:
-                                    found=True
+                    # print(R.nodes)
+                    # update k buckets with node (move it to the front)
+                    for i in R.nodes:
+                        b = self.my_id ^ i.id
+                        b = b.bit_length() - 1
 
-                            # if not contained in that bucket
-                            # add it
-                            if found == False:
-                                self.UpdateBucket(bucket,Node(i.address, i.port, i.id))
-                                # self.k_buckets[bucket].insert(0,Node(i.address, i.port, i.id))
+                        if (b >= 0):
+                            found = False
+                            for match in bucket:
+                                if match.node_id == i.id:
+                                    found = True
+                            
+                            if (not found):
+                                self.UpdateBucket(b, Node(i.address,i.port,i.id))
+                                
+                            # inserted = self.UpdateBucket(bucket, Node(i.address, i.port, i.id))
+                        # if (inserted):
+                        #     index = index-1
+
+
+
+                    
 
 
     '''
@@ -79,6 +87,21 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
 
     def SendQuit(self):
+        obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address=self.my_address), idkey=self.my_id)
+
+        for item in self.k_buckets.items():
+            for peer in item[1]:
+                with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
+                    
+                    print("Letting "+ str(peer.node_id)+" know I'm quitting.")
+
+                    try:
+                        stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
+                        ret = stub.Quit(obj)
+                    except:
+                        pass
+            
+
         pass
 
 
@@ -91,37 +114,29 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     '''
     def UpdateBucket(self, bucket_no, new_node):
         bucket = self.k_buckets[bucket_no]
-        
         index = -1
         # seeing if the new node is already in the k buckets
         for i in range(len(bucket)):
-            # print("current is " + str(bucket[i].node_id))
-            # print("compared with " + str(new_node.node_id))
             if bucket[i].node_id == new_node.node_id:
+                # print("Found a bucket to update")
                 index = i
-
-        # print("index is " + str(index))
+        
         # remove it, and add it back to the beginning
         if index != -1:
-            # print("updating bucket")
-            # print(bucket)
             del bucket[index]
-            # print(bucket)
-            # bucket = bucket[index + 1 : index - 1]
-            # print(bucket)
             bucket.insert(0, new_node)
-            # print(bucket)
-            #self.k_buckets[bucket_no] = bucket
-            return
         # if it's not in there
         else:
-
             #check size of array
             if len(bucket) >= 2:
                 del bucket[1]
             
             bucket.insert(0, new_node)
-            return
+
+        # print("contents are ")
+        # print(bucket)
+        # print("contents are ")
+        return
 
     
 
@@ -167,7 +182,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
             responding = []
 
-            responding.append(csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address))
+            # responding.append(csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address))
 
             # for all buckets
             for item in self.k_buckets.items():
@@ -279,10 +294,10 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         
         # if found, update it
         if found == True:
-            print("Found")
+            # print("Found")
             self.UpdateBucket(bucket, Node(node.address,node.port,node.id))
-        else:
-            print("not found")
+        # else:
+            # print("not found")
 
     
         return toReturn
@@ -319,3 +334,33 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             print("No record of quitting node " + str(node_id) + "in k-buckets.")
         
         return request
+
+
+# print("getting -----")
+                    # print(node)
+                    # print("getting -----")
+                    # found_original = False
+                    # for i in node.nodes:
+                    #     bucket = self.my_id ^ i.id
+                    #     bucket = bucket.bit_length() - 1
+
+                    #     if (i.id == target_id):
+                    #         found_original = True
+
+                    #     found = False
+
+                    #     # it's -1 for itself, ignore self
+                    #     if bucket >= 0:
+                    #         for matches in self.k_buckets[bucket]:
+                    #             if matches.node_id == i.id:
+                    #                 found=True
+
+                    #         # if not contained in that bucket
+                    #         # add it
+                    #         # if found == False:
+                            
+                    #         self.UpdateBucket(bucket,Node(i.address, i.port, i.id))
+                    #             # self.k_buckets[bucket].insert(0,Node(i.address, i.port, i.id))
+                    # if (found_original):
+                    #     return
+                    # # self.PrintBuckets()
