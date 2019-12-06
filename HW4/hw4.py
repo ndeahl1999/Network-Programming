@@ -112,8 +112,7 @@ def run():
             
             print("Storing key " + str(key) + " at node " + str(min_key.node_id))
             if (min_key.node_id == hash_table.my_id):
-                pass
-                # print("store this is self")
+                hash_table.data[key] = value
             else:
                 # send the store command to that remote
                 with grpc.insecure_channel(min_key.address + ":" + str(min_key.port)) as channel:

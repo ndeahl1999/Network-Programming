@@ -70,6 +70,11 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
     '''
     def SendFindValue(self, target_key):
+
+        if target_key in self.data.keys():
+            print("Found data \""+ self.data[target_key]+ "\" for key " + str(target_key))
+            return
+        
         obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address=self.my_address), idkey=target_key)
 
         # for all peers
@@ -243,6 +248,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         
         #toReturn = csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=True, kv=csci4220_hw4_pb2.KeyValue(node=self_node,key=,value=) nodes=[]))
         if key in self.data:
+            print("Found")
             return csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=True, kv=csci4220_hw4_pb2.KeyValue(node=self_node,key=key,value=self.data[key]), nodes=[])
         else:
             return csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=False, kv=csci4220_hw4_pb2.KeyValue(node=self_node, key=key, value="None"), nodes=[
