@@ -100,9 +100,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
                         ret = stub.Quit(obj)
                     except:
                         pass
-            
-
-        pass
 
 
     '''
@@ -320,16 +317,16 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         node = request.node
         node_id = request.idkey
 
-        bucket , index = -1
+        bucket = -1
+        index = -1
         for item in self.k_buckets.items():
-            for i in range(item[1]):
+            for i in range(len(item[1])):
                 if item[1][i].node_id == node_id:
-                    bucket = item[0][i]
+                    bucket = item[0]
                     index = i
-
         if index != -1:
-            print("Evicting quitting node " + str(node_id) + " from bucket " + bucket)
-            del k_buckets[bucket][index]
+            print("Evicting quitting node " + str(node_id) + " from bucket " + str(bucket))
+            del self.k_buckets[bucket][index]
         else:
             print("No record of quitting node " + str(node_id) + "in k-buckets.")
         

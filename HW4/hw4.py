@@ -112,7 +112,8 @@ def run():
             
             print("Storing key " + str(key) + " at node " + str(min_key.node_id))
             if (min_key.node_id == hash_table.my_id):
-                print("store this is self")
+                pass
+                # print("store this is self")
             else:
                 # send the store command to that remote
                 with grpc.insecure_channel(min_key.address + ":" + str(min_key.port)) as channel:
@@ -164,7 +165,7 @@ def run():
 
         if (arguments[0] == "QUIT"):
             hash_table.SendQuit()
-            print("Shut down node " + str(local_id) +"\n")
+            print("Shut down node " + str(local_id))
             break
 
     
