@@ -236,8 +236,8 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             bucket = bucket.bit_length() - 1
 
             n = Node(to_add.address, to_add.port, to_add.id)
-            self.k_buckets[bucket].append(n)
-
+           # self.k_buckets[bucket].append(n)
+            self.UpdateBucket(bucket, n)
             responding = []
             for item in self.k_buckets.items():
                 for peer in item[1]:
