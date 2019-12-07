@@ -61,7 +61,8 @@ def run():
     while (True):
         stdin = str(input())
         arguments = stdin.split(" ")
-        # connect to another peer
+
+        # connect to another peer directly
         if (arguments[0] == "BOOTSTRAP"):
             peer_host = arguments[1]
             peer_port = arguments[2]
@@ -81,28 +82,23 @@ def run():
                 bucket = bucket.bit_length() - 1
                 
 
-
+                # create a new node from the responding node and append it
                 n = Node(node.responding_node.address, node.responding_node.port, node.responding_node.id)
-                # hash_table.peers.append(n)
                 hash_table.k_buckets[bucket].append(n)
 
+                # add all the nodes that were neighbors
                 for i in node.nodes:
                     b = hash_table.my_id ^ i.id
                     b = b.bit_length() - 1
 
                     if (b >= 0):
                         hash_table.UpdateBucket(b, Node(i.address, i.port, i.id))
-                # bootstrapped = node.responding_node
                 
-
-            
             print("After BOOTSTRAP(" + str(node.responding_node.id) + "), k_buckets now look like:")
             hash_table.PrintBuckets()
 
-            # for i in range(len(hash_table.peers)):
-            #     print(hash_table.peers[i])
-                # print(node.responding_node.port)
-
+        
+        # if the command is to store a value at a key
         if (arguments[0] == "STORE"):
             key = int(arguments[1])
             value = arguments[2]
@@ -121,6 +117,7 @@ def run():
             if (min_key.node_id == hash_table.my_id):
                 hash_table.data[key] = value
             else:
+
                 # send the store command to that remote
                 with grpc.insecure_channel(min_key.address + ":" + str(min_key.port)) as channel:
                     stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
@@ -128,22 +125,11 @@ def run():
                     
                     id_key = stub.Store(obj)
 
-
-                    
-
-
-            
-
-            # now we have the peer to send it to
-
-                
-
-
+        # command to find a node
         if (arguments[0] == "FIND_NODE"):
             target_id = int(arguments[1])
             print("Before FIND_NODE command, k-buckets are:")
             hash_table.PrintBuckets()
-
 
             # perform searching and updating here
             hash_table.SendFindNode(target_id)
@@ -151,30 +137,26 @@ def run():
             print("After FIND_NODE command, k-buckets are:")
             hash_table.PrintBuckets()
 
-
-
-
-
-
+        # command to find a value
         if (arguments[0] == "FIND_VALUE"):
             find_target = int(arguments[1])
-
             print("Before FIND_VALUE command, k-buckets are:")
             hash_table.PrintBuckets()
 
+            # perform search and updating here
             hash_table.SendFindValue(find_target)
-
 
             print("After FIND_VALUE command, k-buckets are:")
             hash_table.PrintBuckets()
 
-
+        # command to  quit and unregister self from pers
         if (arguments[0] == "QUIT"):
+
+            # send quit to all peers
             hash_table.SendQuit()
             print("Shut down node " + str(local_id))
             break
 
-    
 
 if __name__ == '__main__':
     run()
