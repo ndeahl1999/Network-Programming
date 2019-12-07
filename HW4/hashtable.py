@@ -242,13 +242,16 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         node = request.node # node object (id, port, address)
         key = request.idkey  # int
 
-        print("Serving FindKey("+str(key)+") request for " + str(node.id))
+        print("Serving FindKey(" + str(key) + ") request for " + str(node.id))
+        
+        # print("Before FIND_VALUE command, k-buckets are:")
+        # self.PrintBuckets()
         
         self_node = csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address)
         
         #toReturn = csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=True, kv=csci4220_hw4_pb2.KeyValue(node=self_node,key=,value=) nodes=[]))
         if key in self.data:
-            print("Found")
+            # print("Found")
             return csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=True, kv=csci4220_hw4_pb2.KeyValue(node=self_node,key=key,value=self.data[key]), nodes=[])
         else:
             return csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=False, kv=csci4220_hw4_pb2.KeyValue(node=self_node, key=key, value="None"), nodes=[
