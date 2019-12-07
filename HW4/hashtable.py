@@ -131,11 +131,8 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
                                     if (response.mode_kv == True):
                                         print("Found value \"" + response.kv.value + "\" for key " + str(response.kv.key))
-                                # print("to explore " + str(i.id))
-                                # with grpc.insecure_channel(peer.address)
-
-                                
-                        # print("Could not find key " + str(target_key))
+                                        return
+        print("Could not find key " + str(target_key))
         
 
 
@@ -209,6 +206,24 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     @responding_node is a Node object
     @nodes is a list containing 0 or more nodes
 
+
+
+    while some of the k closest have not been asked
+    S = the k closest ID to <nodeID>
+    S' = nodes in S not yet contacted
+    for node in S':
+        R = node.FindNode(<nodeID>)
+
+        update k-buckets with node
+
+        if node in R was already in a k-bucket, position does not chnage
+        if it was not in the bucket yet, added as most recently used in that bucket
+        may kick out node from above
+
+        update k-buckets with all nodes in R
+
+    if <nodeID> has been found, stop
+    
     '''
     def FindNode(self, request, context):
         # print(request.node)
@@ -227,10 +242,12 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             self.k_buckets[bucket].append(n)
             # self.k_buckets[bucket].insert(0, n)
 
-            toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=
-            [
-                # csci4220_hw4_pb2.Node(id=1, port=1234, address="address")
-            ])
+            responding = []
+            for item in self.k_buckets.items():
+                for peer in item[1]:
+                    responding.append(csci4220_hw4_pb2.Node(id=peer.node_id, port=peer.port, address=peer.address))
+
+            toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=responding)
             # self.PrintBuckets()
 
             return toReturn
@@ -238,9 +255,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             
 
             responding = []
-
-            # responding.append(csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address))
-
             # for all buckets
             for item in self.k_buckets.items():
 
@@ -261,29 +275,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         
         
 
-        '''
-         while some of the k closest have not been asked
-           S = the k closest ID to <nodeID>
-           S' = nodes in S not yet contacted
-           for node in S':
-               R = node.FindNode(<nodeID>)
-
-               update k-buckets with node
-
-               if node in R was already in a k-bucket, position does not chnage
-               if it was not in the bucket yet, added as most recently used in that bucket
-               may kick out node from above
-
-               update k-buckets with all nodes in R
-
-            if <nodeID> has been found, stop
-           
-        '''
-
-        visited = []
-
-
-
         
         return toReturn
 
@@ -298,9 +289,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         key = request.idkey  # int
 
         print("Serving FindKey(" + str(key) + ") request for " + str(node.id))
-        
-        # print("Before FIND_VALUE command, k-buckets are:")
-        # self.PrintBuckets()
+
         
         self_node = csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address)
         
@@ -359,11 +348,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         
         # if found, update it
         if found == True:
-            # print("Found")
             self.UpdateBucket(bucket, Node(node.address,node.port,node.id))
-        # else:
-            # print("not found")
-
     
         return toReturn
 
@@ -400,32 +385,3 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         
         return request
 
-
-# print("getting -----")
-                    # print(node)
-                    # print("getting -----")
-                    # found_original = False
-                    # for i in node.nodes:
-                    #     bucket = self.my_id ^ i.id
-                    #     bucket = bucket.bit_length() - 1
-
-                    #     if (i.id == target_id):
-                    #         found_original = True
-
-                    #     found = False
-
-                    #     # it's -1 for itself, ignore self
-                    #     if bucket >= 0:
-                    #         for matches in self.k_buckets[bucket]:
-                    #             if matches.node_id == i.id:
-                    #                 found=True
-
-                    #         # if not contained in that bucket
-                    #         # add it
-                    #         # if found == False:
-                            
-                    #         self.UpdateBucket(bucket,Node(i.address, i.port, i.id))
-                    #             # self.k_buckets[bucket].insert(0,Node(i.address, i.port, i.id))
-                    # if (found_original):
-                    #     return
-                    # # self.PrintBuckets()

@@ -84,7 +84,14 @@ def run():
 
                 n = Node(node.responding_node.address, node.responding_node.port, node.responding_node.id)
                 # hash_table.peers.append(n)
-                hash_table.k_buckets[bucket].insert(0,n)
+                hash_table.k_buckets[bucket].append(n)
+
+                for i in node.nodes:
+                    b = hash_table.my_id ^ i.id
+                    b = b.bit_length() - 1
+
+                    if (b >= 0):
+                        hash_table.UpdateBucket(b, Node(i.address, i.port, i.id))
                 # bootstrapped = node.responding_node
                 
 
