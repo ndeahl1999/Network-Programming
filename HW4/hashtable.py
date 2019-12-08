@@ -32,6 +32,15 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
     '''
 
+    Helper function to send Bootstrap request to peer
+
+    '''
+
+    def SendBootstrap(self, target_host, target_port):
+        pass
+
+    '''
+
     Helper function to send FindNode request to peers
 
     '''
@@ -273,7 +282,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         self_node = csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address)
 
         
-
+        # update the bucket so requesting is the most recent one
         b = self.my_id ^ node.id
         b = b.bit_length() - 1
 
@@ -378,7 +387,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
         # not a peer
         else:
-            print("No record of quitting node " + str(node_id) + "in k-buckets.")
+            print("No record of quitting node " + str(node_id) + " in k-buckets.")
         
         return request
 

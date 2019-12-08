@@ -84,7 +84,8 @@ def run():
 
                 # create a new node from the responding node and append it
                 n = Node(node.responding_node.address, node.responding_node.port, node.responding_node.id)
-                hash_table.k_buckets[bucket].append(n)
+                hash_table.UpdateBucket(bucket,n)
+                # hash_table.k_buckets[bucket].append(n)
 
                 # add all the nodes that were neighbors
                 for i in node.nodes:
