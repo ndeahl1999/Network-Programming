@@ -67,36 +67,11 @@ def run():
             peer_host = arguments[1]
             peer_port = arguments[2]
 
-            # temporarily connect with them to get 
-            with grpc.insecure_channel(peer_host + ":" + peer_port) as channel:
-                
-                # access the remote server
-                stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
-                obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=hash_table.my_id, port=int(hash_table.my_port), address=hash_table.my_address), idkey=local_id)
-                
-                # node contains the return from FindNode
-                node = stub.FindNode(obj)
+            hash_table.SendBootstrap(peer_host, peer_port)
 
-                # get the bucket it should be stored in
-                bucket = hash_table.my_id ^ node.responding_node.id
-                bucket = bucket.bit_length() - 1
+            
                 
-
-                # create a new node from the responding node and append it
-                n = Node(node.responding_node.address, node.responding_node.port, node.responding_node.id)
-                hash_table.UpdateBucket(bucket,n)
-                # hash_table.k_buckets[bucket].append(n)
-
-                # add all the nodes that were neighbors
-                for i in node.nodes:
-                    b = hash_table.my_id ^ i.id
-                    b = b.bit_length() - 1
-
-                    if (b >= 0):
-                        hash_table.UpdateBucket(b, Node(i.address, i.port, i.id))
-                
-            print("After BOOTSTRAP(" + str(node.responding_node.id) + "), k_buckets now look like:")
-            hash_table.PrintBuckets()
+          
 
         
         # if the command is to store a value at a key

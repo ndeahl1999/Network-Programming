@@ -36,8 +36,36 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
     '''
 
-    def SendBootstrap(self, target_host, target_port):
-        pass
+    def SendBootstrap(self, peer_host, peer_port):
+        # temporarily connect with them to get 
+        with grpc.insecure_channel(peer_host + ":" + peer_port) as channel:
+            
+            # access the remote server
+            stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
+            obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address=self.my_address), idkey=self.my_id)
+            
+            # node contains the return from FindNode
+            node = stub.FindNode(obj)
+
+            # get the bucket it should be stored in
+            bucket = self.my_id ^ node.responding_node.id
+            bucket = bucket.bit_length() - 1
+            
+
+            # create a new node from the responding node and append it
+            n = Node(node.responding_node.address, node.responding_node.port, node.responding_node.id)
+            self.UpdateBucket(bucket,n)
+            # hash_table.k_buckets[bucket].append(n)
+
+            # add all the nodes that were neighbors
+            for i in node.nodes:
+                b = self.my_id ^ i.id
+                b = b.bit_length() - 1
+
+                if (b >= 0):
+                    self.UpdateBucket(b, Node(i.address, i.port, i.id))
+            print("After BOOTSTRAP(" + str(node.responding_node.id) + "), k_buckets now look like:")
+            self.PrintBuckets()
 
     '''
 
