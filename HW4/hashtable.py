@@ -272,6 +272,13 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         # create self node to attach to findValue call
         self_node = csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address)
 
+        
+
+        b = self.my_id ^ node.id
+        b = b.bit_length() - 1
+
+        self.UpdateBucket(b, Node(node.address, node.port, node.id))
+
         # if self contains key
         if key in self.data:
             return csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=True, kv=csci4220_hw4_pb2.KeyValue(node=self_node,key=key,value=self.data[key]), nodes=[])
