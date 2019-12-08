@@ -38,8 +38,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     def SendFindNode(self, target_id):
         obj = csci4220_hw4_pb2.IDKey(node=csci4220_hw4_pb2.Node(id=self.my_id, port=int(self.my_port), address=self.my_address),
         idkey=target_id)
-        # counter = 2
-
 
         # keep track of visited
         visited = []
@@ -51,10 +49,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
                 if (bucket[index].node_id in visited):
                     print("alerady visited")
                     continue
-
-                # if counter == 0:
-                #     return
-                # counter = counter-1
 
                 # send the peer the find node command
                 with grpc.insecure_channel(bucket[index].address + ":" + str(bucket[index].port)) as channel:
@@ -177,14 +171,11 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         if index != -1:
             del bucket[index]
             bucket.append(new_node)
-
         # if it's not in there
         else:
-
             #check size of array
             if len(bucket) >= 2:
                 del bucket[0]
-            
             bucket.append(new_node)
 
     
@@ -236,7 +227,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             bucket = bucket.bit_length() - 1
 
             n = Node(to_add.address, to_add.port, to_add.id)
-           # self.k_buckets[bucket].append(n)
             self.UpdateBucket(bucket, n)
             responding = []
             for item in self.k_buckets.items():
