@@ -34,13 +34,8 @@ def run():
     Submitty may kill your program if you have too many file descriptors open
     at the same time.'''
 
-    # server.wait_for_termination()
-    # channel = grpc.insecure_channel(remote_addr + ':' + str(remote_port))
-
 
     # start the server in the background
-
-    
     hash_table = HashTable()
     hash_table.my_port = int(my_port)
     hash_table.my_id = local_id
@@ -69,11 +64,6 @@ def run():
 
             hash_table.SendBootstrap(peer_host, peer_port)
 
-            
-                
-          
-
-        
         # if the command is to store a value at a key
         if (arguments[0] == "STORE"):
             key = int(arguments[1])

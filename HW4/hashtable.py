@@ -3,6 +3,11 @@ import csci4220_hw4_pb2_grpc
 import grpc
 from node import *
 
+'''
+
+Main representation of the server
+
+'''
 class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
     # the peers and the buckets store
@@ -35,7 +40,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     Helper function to send Bootstrap request to peer
 
     '''
-
     def SendBootstrap(self, peer_host, peer_port):
         # temporarily connect with them to get 
         with grpc.insecure_channel(peer_host + ":" + peer_port) as channel:
@@ -55,7 +59,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             # create a new node from the responding node and append it
             n = Node(node.responding_node.address, node.responding_node.port, node.responding_node.id)
             self.UpdateBucket(bucket,n)
-            # hash_table.k_buckets[bucket].append(n)
 
             # add all the nodes that were neighbors
             for i in node.nodes:
@@ -70,6 +73,8 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     '''
 
     Helper function to send FindNode request to peers
+
+    Takes in parameter of target_id trying to find
 
     '''
     def SendFindNode(self, target_id):
@@ -97,6 +102,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
                     # add this to visited
                     visited.append(bucket[index].node_id)
 
+                    # update the position of this first node
                     self.UpdateBucket(item[0],bucket[index])
 
                     # update k buckets with node (move it to the front)
@@ -110,6 +116,7 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
                             for match in bucket:
                                 if match.node_id == i.id:
                                     found = True
+
                             # found it
                             if (target_id == i.id):
                                 print("Found destination id " + str(target_id))
@@ -129,40 +136,54 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
         visited = []
         visited.append(self.my_id)
+
         # for all peers
+        to_sort = []
         for item in self.k_buckets.items():
             for peer in item[1]:
-                with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
+                to_sort.append(peer)
+        
+        # sort the peers based on distance to target_key
+        to_sort.sort(key=lambda node: (target_key ^ node.node_id).bit_length() -1)
 
-                    # send find value command
-                    stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
-                    R = stub.FindValue(obj)
-                    visited.append(peer.node_id)
+        # for all peers in order
+        for peer in to_sort:
+            with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
 
-                    self.UpdateBucket(item[0], peer)
-                    
-                    # if found
-                    if (R.mode_kv == True):
-                        print("Found value \"" + R.kv.value + "\" for key " + str(R.kv.key))
-                        return
-                    else:
-                        for i in R.nodes:
-                            if i.id not in visited:
+                # send find value command
+                stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
+                R = stub.FindValue(obj)
+                visited.append(peer.node_id)
 
-                                b = self.my_id ^ i.id
-                                b = b.bit_length() - 1
+                b = peer.node_id ^ self.my_id
+                b = b.bit_length() - 1
 
-                                self.UpdateBucket(b, Node(i.address, i.port, i.id))
+                # update location of the peer
+                self.UpdateBucket(b, peer)
+                
+                # if found
+                if (R.mode_kv == True):
+                    print("Found value \"" + R.kv.value + "\" for key " + str(R.kv.key))
+                    return
+                else:
+                    for i in R.nodes:
+                        if i.id not in visited:
 
-                                # search through the returned k nearest peers
-                                with grpc.insecure_channel(i.address + ":" + str(i.port)) as to_ask:
-                                    stub = csci4220_hw4_pb2_grpc.KadImplStub(to_ask)
-                                    response = stub.FindValue(obj)
-                                    visited.append(i.id)
+                            b = self.my_id ^ i.id
+                            b = b.bit_length() - 1
 
-                                    if (response.mode_kv == True):
-                                        print("Found value \"" + response.kv.value + "\" for key " + str(response.kv.key))
-                                        return
+                            self.UpdateBucket(b, Node(i.address, i.port, i.id))
+
+                            # search through the returned k nearest peers
+                            with grpc.insecure_channel(i.address + ":" + str(i.port)) as to_ask:
+                                stub = csci4220_hw4_pb2_grpc.KadImplStub(to_ask)
+                                response = stub.FindValue(obj)
+                                visited.append(i.id)
+
+                                # if found in peer list
+                                if (response.mode_kv == True):
+                                    print("Found value \"" + response.kv.value + "\" for key " + str(response.kv.key))
+                                    return
         # if haven't found at this point, print that it couldn't be found
         print("Could not find key " + str(target_key))
         
@@ -179,18 +200,24 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         # for all peers
         for item in self.k_buckets.items():
             for peer in item[1]:
+                #send a quit to all pears
                 with grpc.insecure_channel(peer.address + ":" + str(peer.port)) as channel:
-                    
                     print("Letting "+ str(peer.node_id)+" know I'm quitting.")
+                    
                     # send quit to them
                     try:
                         stub = csci4220_hw4_pb2_grpc.KadImplStub(channel)
                         ret = stub.Quit(obj)
+                    # if quit does not connect, do nothing
+                    # hacky way as of submitty 195
                     except:
                         pass
 
 
     '''
+
+    Helper function responsible for keeping the size of each
+        bucket to 2, and also for appending if it already exists
 
     bucket_no: int
     new_node: Node
@@ -230,28 +257,9 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
     NodeList
     @responding_node is a Node object
     @nodes is a list containing 0 or more nodes
-
-
-
-    while some of the k closest have not been asked
-    S = the k closest ID to <nodeID>
-    S' = nodes in S not yet contacted
-    for node in S':
-        R = node.FindNode(<nodeID>)
-
-        update k-buckets with node
-
-        if node in R was already in a k-bucket, position does not chnage
-        if it was not in the bucket yet, added as most recently used in that bucket
-        may kick out node from above
-
-        update k-buckets with all nodes in R
-
-    if <nodeID> has been found, stop
     
     '''
     def FindNode(self, request, context):
-        # print(request.node)
         to_add = request.node
         request_id = request.idkey
         print("Serving FindNode("+str(to_add.id) + ") request for " + str(request_id))
@@ -269,13 +277,14 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             for item in self.k_buckets.items():
                 for peer in item[1]:
                     responding.append(csci4220_hw4_pb2.Node(id=peer.node_id, port=peer.port, address=peer.address))
-
+            
+            # create the node list
             toReturn = csci4220_hw4_pb2.NodeList(responding_node=csci4220_hw4_pb2.Node(id=self.my_id, port=self.my_port, address=self.my_address), nodes=responding)
 
             return toReturn
+
         else:
             
-
             responding = []
             # for all buckets
             for item in self.k_buckets.items():
@@ -283,7 +292,6 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
                 # for all peers
                 for peer in item[1]:
                     responding.append(csci4220_hw4_pb2.Node(id=peer.node_id, port=peer.port, address=peer.address))
-
 
             # create the return object
             # using the array as the nodelist
@@ -321,6 +329,8 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
             return csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=True, kv=csci4220_hw4_pb2.KeyValue(node=self_node,key=key,value=self.data[key]), nodes=[])
         # if self doesn't contain key, ask peers 
         else:
+
+            # create the nodes list to return
             nodes_list = []
             for item in self.k_buckets.items():
                 for peer in item[1]:
@@ -328,27 +338,11 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
 
             return csci4220_hw4_pb2.KV_Node_Wrapper(responding_node=self_node, mode_kv=False, kv=csci4220_hw4_pb2.KeyValue(node=self_node, key=key, value="None"), nodes=nodes_list)
         
-
-
-
     '''
 
+    responsible for store RPC call
 
-        The node should send a Store RPC to the single node that has ID closest to the key. Keep in mind that
-        the current node may be the closest node and may need to store the key/value pair locally. For simplicty,
-        values will never have spaces in them, but may be otherwise-arbitrary strings.
-        When calling the Store RPC, the requester should print:
-        Storing key <key> at node <remoteID>
-        If a node receives a call to Store, it should print:
-        Storing key <key> value "<value>"
-        (update 12/5): When receiving a store RPC the node receiving the call should locally store the key/value
-        pair. It should also update its own k-buckets by adding/updating the requester’s ID to be the most recently
-        used
-
-        its basically done
-        just need update buckets
-
-        true
+    returns IDKey with the requested's info
 
     '''
     def Store(self, request, context):
@@ -381,17 +375,12 @@ class HashTable(csci4220_hw4_pb2_grpc.KadImplServicer):
         return toReturn
 
     '''
-        The node should send a Quit RPC to each node that is in its k-buckets. Before making a call to node
-        <remoteID>, the node should print:
-        Letting <remoteID> know I'm quitting.
-        If a node receives a call to Quit from <remoteID>, and the remote node is in k-bucket , the entry should be
-        removed from the k-bucket and the following printed:
-        Evicting quitting node <remoteID> from bucket <i>
-        Otherwise the node should print the following:
-        No record of quitting node <remoteID> in k-buckets.
-        Finally, the node should print the following message to stdout, where <ID> is its ID, and then terminate:
-        Shut down node <ID>
+        
+    Quit RPC call
 
+    returns IDKey becuase something needs to be returned
+
+    evicts the quitting node
 
     '''
     def Quit(self, request, context):
